@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeftRight } from 'lucide-react';
 import bearing from '@turf/bearing';
 import distance from '@turf/distance';
 import geomagnetism from 'geomagnetism';
+import { ArrowLeftRight } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface AirportEntry {
   icao: string;
@@ -68,7 +68,14 @@ function applyHemisphere(value: number, hemisphere?: string): number {
 }
 
 function validateCoordinates(lat: number, lon: number): Coordinates | null {
-  if (Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+  if (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lon >= -180 &&
+    lon <= 180
+  ) {
     return { lat, lon };
   }
   return null;
@@ -104,7 +111,7 @@ function parseCoordinates(raw: string): Coordinates | null {
 function resolveLocation(
   raw: string,
   airportIndex: Map<string, AirportEntry> | null,
-  hasDbError: boolean
+  hasDbError: boolean,
 ): ResolutionResult {
   const trimmed = raw.trim();
   if (!trimmed) return { point: null, status: '' };
@@ -122,13 +129,17 @@ function resolveLocation(
     if (!airportIndex) {
       return {
         point: null,
-        status: hasDbError ? 'Airport database offline' : 'Loading airport database...',
+        status: hasDbError
+          ? 'Airport database offline'
+          : 'Loading airport database...',
       };
     }
 
     const airport = airportIndex.get(code);
     if (airport) {
-      const codeDisplay = airport.iata ? `${airport.icao} / ${airport.iata}` : airport.icao;
+      const codeDisplay = airport.iata
+        ? `${airport.icao} / ${airport.iata}`
+        : airport.icao;
       return {
         point: { lat: airport.lat, lon: airport.lon },
         status: `${codeDisplay} · ${airport.name}`,
@@ -141,7 +152,10 @@ function resolveLocation(
   return { point: null, status: 'Enter ICAO, IATA, or lat, lon' };
 }
 
-function calculateFlightData(from: Coordinates, to: Coordinates): FlightCalculation | null {
+function calculateFlightData(
+  from: Coordinates,
+  to: Coordinates,
+): FlightCalculation | null {
   if (from.lat === to.lat && from.lon === to.lon) {
     return null;
   }
@@ -167,7 +181,14 @@ function calculateFlightData(from: Coordinates, to: Coordinates): FlightCalculat
   };
 }
 
-function LocationField({ id, label, placeholder, value, status, onChange }: LocationFieldProps) {
+function LocationField({
+  id,
+  label,
+  placeholder,
+  value,
+  status,
+  onChange,
+}: LocationFieldProps) {
   return (
     <div className="min-w-0">
       <label
@@ -186,7 +207,10 @@ function LocationField({ id, label, placeholder, value, status, onChange }: Loca
         spellCheck={false}
         className="w-full h-11 px-3.5 bg-[#07090E] border border-[#1E293B] rounded text-sm font-mono tabular-nums text-slate-100 placeholder:text-slate-600 focus:outline-none focus-visible:border-sky-400 transition-colors"
       />
-      <p className="mt-1.5 h-4 leading-4 text-xs font-mono text-slate-400 truncate" title={status}>
+      <p
+        className="mt-1.5 h-4 leading-4 text-xs font-mono text-slate-400 truncate"
+        title={status}
+      >
         {status}
       </p>
     </div>
@@ -196,7 +220,10 @@ function LocationField({ id, label, placeholder, value, status, onChange }: Loca
 export default function App() {
   const [originInput, setOriginInput] = useState('');
   const [destinationInput, setDestinationInput] = useState('');
-  const [airportIndex, setAirportIndex] = useState<Map<string, AirportEntry> | null>(null);
+  const [airportIndex, setAirportIndex] = useState<Map<
+    string,
+    AirportEntry
+  > | null>(null);
   const [hasDbError, setHasDbError] = useState(false);
 
   useEffect(() => {
@@ -212,7 +239,11 @@ export default function App() {
           const map = new Map<string, AirportEntry>();
 
           for (const entry of Object.values(data)) {
-            if (entry && typeof entry.lat === 'number' && typeof entry.lon === 'number') {
+            if (
+              entry &&
+              typeof entry.lat === 'number' &&
+              typeof entry.lon === 'number'
+            ) {
               if (entry.icao) {
                 map.set(entry.icao.toUpperCase(), entry);
               }
@@ -240,12 +271,12 @@ export default function App() {
 
   const originResolved = useMemo(
     () => resolveLocation(originInput, airportIndex, hasDbError),
-    [originInput, airportIndex, hasDbError]
+    [originInput, airportIndex, hasDbError],
   );
 
   const destinationResolved = useMemo(
     () => resolveLocation(destinationInput, airportIndex, hasDbError),
-    [destinationInput, airportIndex, hasDbError]
+    [destinationInput, airportIndex, hasDbError],
   );
 
   const calculation = useMemo(() => {
@@ -322,7 +353,9 @@ export default function App() {
           <dl className="grid grid-cols-[2.75rem_1fr] gap-x-4 gap-y-1 text-xs font-mono tabular-nums sm:min-w-[13.5rem]">
             <dt className="text-slate-500">DIST</dt>
             <dd className="text-right text-slate-300 whitespace-nowrap">
-              {calculation ? `${calculation.distanceNm} NM · ${calculation.distanceKm} km` : '--- NM · --- km'}
+              {calculation
+                ? `${calculation.distanceNm} NM · ${calculation.distanceKm} km`
+                : '--- NM · --- km'}
             </dd>
             <dt className="text-slate-500">TRUE</dt>
             <dd className="text-right text-slate-300 whitespace-nowrap">

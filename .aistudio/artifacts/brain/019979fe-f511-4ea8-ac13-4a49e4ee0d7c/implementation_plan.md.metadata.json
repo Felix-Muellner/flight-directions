@@ -1,6 +1,0 @@
-{
-  "summary": "Implementation plan for a minimalist MSFS 2024 Magnetic Heading Calculator taking ICAO/IATA airport codes or coordinates in two input fields and computing the initial magnetic heading using existing airport data and the World Magnetic Model (geomagnetism).",
-  "updatedAt": "2026-10-19T23:36:24.934517326Z",
-  "requestFeedback": true,
-  "userFacing": true
-}

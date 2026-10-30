@@ -5,10 +5,24 @@
 
 ## Verification Roadmap (In Progress)
 - [ ] **Sandboxed Environment:** Provision a GitHub Codespace for secure, reproducible execution.
-- [ ] **Build & Execution:** Reverse-engineer the generated configuration to successfully compile and run the application outside of the AI Studio preview environment.
+- [x] **Build & Execution:** Reverse-engineer the generated configuration to successfully compile and run the application outside of the AI Studio preview environment.
 - [ ] **Agentic Unit Testing:** Deploy a terminal-based AI agent to write automated tests (Vitest) mathematically proving the core `geomagnetism` and `turf` routing logic.
-- [ ] **CI/CD Pipeline:** Configure GitHub Actions to automatically enforce tests on every commit.
+- [x] **CI/CD Pipeline:** Configure GitHub Actions to automatically enforce tests on every commit.
 - [ ] **Production Deployment:** Establish an automated release pipeline to deploy the verified, compiled application to a public cloud provider.
+
+## Development
+
+Requires Node.js 20.19+ (CI uses Node 22).
+
+```bash
+npm install          # install dependencies
+npm run dev          # dev server on http://localhost:3000
+npm test             # run tests (Vitest)
+npm run lint         # lint + format check (Biome); fix with: npm run format
+npm run typecheck    # TypeScript check
+npm run build        # production build to dist/
+npm run secrets      # secret scan (gitleaks, downloaded to .tools/ on first run)
+```
 
 ---
 
