@@ -1,0 +1,40 @@
+// Dev container for GitHub Codespaces (and VS Code "Dev Containers").
+// Reference: https://containers.dev/implementors/json_reference/
+{
+  "name": "Flight Directions",
+
+  // Node 22 to match CI (.github/workflows/ci.yml). Debian-based image with
+  // git, npm and TypeScript tooling preinstalled.
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+
+  // Official Anthropic feature: installs the Claude Code CLI (`claude`) and
+  // the Claude Code VS Code extension. Log in by running `claude` once.
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+
+  // Install exact dependencies from package-lock.json, as CI does.
+  "postCreateCommand": "npm ci",
+
+  // Vite dev server (`npm run dev`) listens on port 3000.
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Vite dev server",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["biomejs.biome", "vitest.explorer"],
+      "settings": {
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports.biome": "explicit"
+        }
+      }
+    }
+  }
+}
