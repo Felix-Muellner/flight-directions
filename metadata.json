@@ -1,6 +1,0 @@
-{
-  "name": "Flight Directions",
-  "description": "Minimalist MSFS 2024 magnetic heading calculator for airport codes and coordinates.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

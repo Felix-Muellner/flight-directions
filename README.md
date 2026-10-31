@@ -12,10 +12,10 @@
 
 ## Development
 
-Requires Node.js 20.19+ (CI uses Node 22).
+Requires Node.js 22.12+ and npm 10.9+ (enforced on install; pnpm, yarn and Bun are not supported).
 
 ```bash
-npm install          # install dependencies
+npm ci               # install exact dependencies from package-lock.json
 npm run dev          # dev server on http://localhost:3000
 npm test             # run tests (Vitest)
 npm run lint         # lint + format check (Biome); fix with: npm run format

@@ -3,14 +3,20 @@
 {
   "name": "Flight Directions",
 
-  // Node 22 to match CI (.github/workflows/ci.yml). Debian-based image with
-  // git, npm and TypeScript tooling preinstalled.
+  // Node 22 to match CI (.github/workflows/ci.yml) and package.json "engines"
+  // (>=22.12). Debian-based image with git, npm and TypeScript tooling.
+  // The image also ships pnpm and yarn; this project refuses them. npm is the
+  // only supported package manager ("packageManager" in package.json, plus
+  // engine-strict in .npmrc).
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
 
-  // Official Anthropic feature: installs the Claude Code CLI (`claude`) and
-  // the Claude Code VS Code extension. Log in by running `claude` once.
   "features": {
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+    // Official Anthropic feature: installs the Claude Code CLI (`claude`) and
+    // the Claude Code VS Code extension. Log in by running `claude` once.
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+    // GitHub CLI (`gh`) for issues and PRs. In Codespaces it authenticates
+    // automatically via the provided GITHUB_TOKEN.
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
   // Install exact dependencies from package-lock.json, as CI does.
