@@ -181,5 +181,7 @@ describe('App', () => {
     expect(screen.getByText('Near magnetic pole')).toBeTruthy();
     expect(magneticHeading()).toMatch(/^\d{3}°$/);
     expect(valueFor('TRUE')).toMatch(/^\d{3}\.\d°$/);
+    expect(valueFor('VAR')).toMatch(/^\d+\.\d° [EW]$/);
+    expect(valueFor('DIST')).toMatch(/^[\d,]+ NM · [\d,]+ km$/);
   });
 });

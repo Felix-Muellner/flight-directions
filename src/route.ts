@@ -24,8 +24,9 @@ const BLACKOUT_ZONE_MAX_H = 2000;
 const CAUTION_ZONE_MAX_H = 6000;
 
 /**
- * Why a route has no true bearing or magnetic heading (degenerate routes,
- * blackout zone), or why its magnetic heading needs care (caution zone).
+ * Why a route shows no true bearing and magnetic heading (degenerate
+ * routes), no magnetic heading (blackout zone), or a magnetic heading that
+ * needs care (caution zone).
  */
 export type RouteNotice = 'same-point' | 'too-close' | 'antipodal' | PoleZone;
 
