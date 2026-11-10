@@ -94,14 +94,16 @@ describe('App', () => {
   it('shows offline when the airport database fails to load', async () => {
     const { user } = renderApp(failsToLoad);
     await user.type(originInput(), 'KJFK');
-    expect(await screen.findByText('Airport database offline')).toBeTruthy();
+    await screen.findByText('Airport database offline');
+    expect(statusOf(originInput())).toBe('Airport database offline');
   });
 
   it('shows not found for an unknown airport code', async () => {
     const { user } = renderApp();
     await screen.findByLabelText('ORIGIN');
     await user.type(originInput(), 'ZZZZ');
-    expect(await screen.findByText('Airport code not found')).toBeTruthy();
+    await screen.findByText('Airport code not found');
+    expect(statusOf(originInput())).toBe('Airport code not found');
   });
 
   it('shows the input hint for unrecognised location input', async () => {
@@ -130,5 +132,8 @@ describe('App', () => {
     );
     expect(originInput().value).toBe('EGLL');
     expect(destinationInput().value).toBe('KJFK');
+    expect(statusOf(originInput())).toBe(
+      'EGLL / LHR · London Heathrow Airport',
+    );
   });
 });
