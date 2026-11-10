@@ -4,17 +4,32 @@ export interface Coordinates {
 }
 
 const DECIMAL_COORD_REGEX =
-  /^([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSns])?[\s,;]+([+-]?\d+(?:\.\d+)?)\s*°?\s*([EWew])?$/;
+  /^([+-]?)(\d+(?:\.\d+)?)\s*°?\s*([NSns])?[\s,;]+([+-]?)(\d+(?:\.\d+)?)\s*°?\s*([EWew])?$/;
 
 const DMS_COORD_REGEX =
   /^(\d{1,2})\s*°\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:\.\d+)?)\s*["″]?\s*([NSns])[\s,;]+(\d{1,3})\s*°\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:\.\d+)?)\s*["″]?\s*([EWew])$/;
 
-function applyHemisphere(value: number, hemisphere?: string): number {
-  if (!hemisphere) return value;
-  const upper = hemisphere.toUpperCase();
-  if (upper === 'S' || upper === 'W') return -Math.abs(value);
-  if (upper === 'N' || upper === 'E') return Math.abs(value);
-  return value;
+/**
+ * Applies a hemisphere letter to a signed value.
+ * Returns null if an explicit sign contradicts the letter (e.g. `-40 N`).
+ */
+function applyHemisphere(
+  sign: string,
+  value: number,
+  hemisphere?: string,
+): number | null {
+  const signed = sign === '-' ? -value : value;
+  if (!hemisphere) return signed;
+  const negative = 'SW'.includes(hemisphere.toUpperCase());
+  if (sign === (negative ? '+' : '-')) return null;
+  return negative ? -value : value;
+}
+
+function dmsToDegrees(degrees: string, minutes: string, seconds: string) {
+  const min = parseInt(minutes, 10);
+  const sec = parseFloat(seconds);
+  if (min >= 60 || sec >= 60) return null;
+  return parseInt(degrees, 10) + min / 60 + sec / 3600;
 }
 
 function validateCoordinates(lat: number, lon: number): Coordinates | null {
@@ -32,26 +47,22 @@ function validateCoordinates(lat: number, lon: number): Coordinates | null {
 }
 
 export function parseCoordinates(raw: string): Coordinates | null {
-  const decMatch = raw.match(DECIMAL_COORD_REGEX);
-  if (decMatch) {
-    const lat = applyHemisphere(parseFloat(decMatch[1]), decMatch[2]);
-    const lon = applyHemisphere(parseFloat(decMatch[3]), decMatch[4]);
+  const dec = raw.match(DECIMAL_COORD_REGEX);
+  if (dec) {
+    const lat = applyHemisphere(dec[1], parseFloat(dec[2]), dec[3]);
+    const lon = applyHemisphere(dec[4], parseFloat(dec[5]), dec[6]);
+    if (lat === null || lon === null) return null;
     return validateCoordinates(lat, lon);
   }
 
-  const dmsMatch = raw.match(DMS_COORD_REGEX);
-  if (dmsMatch) {
-    const rawLat =
-      parseInt(dmsMatch[1], 10) +
-      parseInt(dmsMatch[2], 10) / 60 +
-      parseFloat(dmsMatch[3]) / 3600;
-    const rawLon =
-      parseInt(dmsMatch[5], 10) +
-      parseInt(dmsMatch[6], 10) / 60 +
-      parseFloat(dmsMatch[7]) / 3600;
-
-    const lat = applyHemisphere(rawLat, dmsMatch[4]);
-    const lon = applyHemisphere(rawLon, dmsMatch[8]);
+  const dms = raw.match(DMS_COORD_REGEX);
+  if (dms) {
+    const latDegrees = dmsToDegrees(dms[1], dms[2], dms[3]);
+    const lonDegrees = dmsToDegrees(dms[5], dms[6], dms[7]);
+    if (latDegrees === null || lonDegrees === null) return null;
+    const lat = applyHemisphere('', latDegrees, dms[4]);
+    const lon = applyHemisphere('', lonDegrees, dms[8]);
+    if (lat === null || lon === null) return null;
     return validateCoordinates(lat, lon);
   }
 
