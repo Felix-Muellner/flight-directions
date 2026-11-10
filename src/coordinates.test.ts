@@ -112,3 +112,16 @@ describe('resolveLocation with invalid coordinates', () => {
     },
   );
 });
+
+describe('parseCoordinates: performance', () => {
+  it.each([
+    ['decimal', `1${' '.repeat(5000)}1${' '.repeat(5000)}x`],
+    ['decimal with degree signs', `1°${' '.repeat(5000)}°x`],
+    ['DMS', `1°1'1${' '.repeat(5000)}"${' '.repeat(5000)}x`],
+    ['separators', `1${', '.repeat(5000)}x`],
+  ])('rejects long whitespace input (%s) quickly', (_, raw) => {
+    const start = performance.now();
+    expect(parseCoordinates(raw)).toBeNull();
+    expect(performance.now() - start).toBeLessThan(100);
+  });
+});
