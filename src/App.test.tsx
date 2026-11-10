@@ -136,4 +136,28 @@ describe('App', () => {
       'EGLL / LHR · London Heathrow Airport',
     );
   });
+
+  it.each([
+    ['10, 20', '10, 20', 'Origin and destination are the same point'],
+    ['10, 20', '10.005, 20', 'Origin and destination too close (< 1 NM)'],
+    ['10, 20', '-10, -160', 'Route direction undefined (antipodal points)'],
+  ])('shows %s → %s as a degenerate route', async (from, to, message) => {
+    const { user } = renderApp();
+    await user.type(originInput(), from);
+    await user.type(destinationInput(), to);
+    expect(screen.getByText(message)).toBeTruthy();
+    expect(magneticHeading()).toBe('---°');
+    expect(valueFor('TRUE')).toBe('---.-°');
+    expect(valueFor('DIST')).toMatch(/^[\d,]+ NM · [\d,]+ km$/);
+    expect(valueFor('VAR')).toMatch(/^\d+\.\d° [EW]$/);
+  });
+
+  it('shows no route message for a normal route', async () => {
+    const { user } = renderApp();
+    await user.type(originInput(), '10, 20');
+    await user.type(destinationInput(), '20, 30');
+    expect(
+      screen.queryByText(/Origin and destination|Route direction/),
+    ).toBeNull();
+  });
 });

@@ -111,8 +111,7 @@ export default function App({
 
   const route = useMemo(() => {
     if (!origin.point || !destination.point) return null;
-    const calculated = calculateRoute(origin.point, destination.point, date);
-    return calculated ? formatRoute(calculated) : null;
+    return formatRoute(calculateRoute(origin.point, destination.point, date));
   }, [origin.point, destination.point, date]);
 
   const handleSwap = useCallback(() => {
@@ -198,6 +197,13 @@ export default function App({
             </dd>
           </dl>
         </div>
+
+        <p
+          role="status"
+          className="mt-4 min-h-4 leading-4 text-xs font-mono text-amber-400"
+        >
+          {route?.notice}
+        </p>
       </section>
     </main>
   );

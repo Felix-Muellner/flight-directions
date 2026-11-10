@@ -149,10 +149,12 @@ describe('true bearing and distance', () => {
     '$name',
     ({ origin, destination, km, nm, bearing }) => {
       const result = route(origin, destination);
+      expect(result.notice).toBeNull();
+      const trueBearing = result.trueBearing ?? Number.NaN;
       within(result.distanceNm, nm, 1);
       within(result.distanceKm, km, 1.852);
       const bearingError = Math.abs(
-        ((result.trueBearing - bearing + 540) % 360) - 180,
+        ((trueBearing - bearing + 540) % 360) - 180,
       );
       expect(bearingError).toBeLessThanOrEqual(0.1);
       expect(result.trueBearing).toBeGreaterThanOrEqual(0);
@@ -188,6 +190,7 @@ describe('formatRoute', () => {
     magneticVariation: -13.2,
     distanceNm: 2991.173,
     distanceKm: 5539.652,
+    notice: null,
   };
 
   it('formats the magnetic heading as three digits', () => {
@@ -245,7 +248,10 @@ describe('calculateRoute', () => {
   it('combines true bearing and magnetic variation into the magnetic heading', () => {
     const result = route(KJFK, EGLL);
     expect(result.magneticHeading).toBe(
-      magneticHeadingFrom(result.trueBearing, result.magneticVariation),
+      magneticHeadingFrom(
+        result.trueBearing ?? Number.NaN,
+        result.magneticVariation,
+      ),
     );
   });
 });
