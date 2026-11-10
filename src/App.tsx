@@ -3,37 +3,15 @@
  * SPDX-License-Identifier: MIT
  */
 
-import bearing from '@turf/bearing';
-import distance from '@turf/distance';
-import geomagnetism from 'geomagnetism';
 import { ArrowLeftRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-interface AirportEntry {
-  icao: string;
-  iata?: string;
-  name: string;
-  lat: number;
-  lon: number;
-}
-
-interface Coordinates {
-  lat: number;
-  lon: number;
-}
-
-interface ResolutionResult {
-  point: Coordinates | null;
-  status: string;
-}
-
-interface FlightCalculation {
-  autopilotHdg: string;
-  trueBearing: string;
-  declination: string;
-  distanceNm: string;
-  distanceKm: string;
-}
+import {
+  type AirportDatabase,
+  type AirportDatabaseLoader,
+  loadAirportDatabase as defaultLoadAirportDatabase,
+} from './airportDatabase.ts';
+import { resolveLocation } from './location.ts';
+import { calculateRoute } from './route.ts';
 
 interface LocationFieldProps {
   id: string;
@@ -44,142 +22,12 @@ interface LocationFieldProps {
   onChange: (value: string) => void;
 }
 
-const AIRPORTS_CDN_URLS = [
-  'https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json',
-  'https://raw.githubusercontent.com/mwgg/Airports/master/airports.json',
-] as const;
-
-const DECIMAL_COORD_REGEX =
-  /^([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSns])?[\s,;]+([+-]?\d+(?:\.\d+)?)\s*°?\s*([EWew])?$/;
-
-const DMS_COORD_REGEX =
-  /^(\d{1,2})\s*°\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:\.\d+)?)\s*["″]?\s*([NSns])[\s,;]+(\d{1,3})\s*°\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:\.\d+)?)\s*["″]?\s*([EWew])$/;
-
-const AIRPORT_CODE_REGEX = /^[A-Z0-9]{3,4}$/;
-
-const wmmModel = geomagnetism.model();
-
-function applyHemisphere(value: number, hemisphere?: string): number {
-  if (!hemisphere) return value;
-  const upper = hemisphere.toUpperCase();
-  if (upper === 'S' || upper === 'W') return -Math.abs(value);
-  if (upper === 'N' || upper === 'E') return Math.abs(value);
-  return value;
+interface AppProps {
+  loadAirportDatabase?: AirportDatabaseLoader;
+  now?: () => Date;
 }
 
-function validateCoordinates(lat: number, lon: number): Coordinates | null {
-  if (
-    Number.isFinite(lat) &&
-    Number.isFinite(lon) &&
-    lat >= -90 &&
-    lat <= 90 &&
-    lon >= -180 &&
-    lon <= 180
-  ) {
-    return { lat, lon };
-  }
-  return null;
-}
-
-function parseCoordinates(raw: string): Coordinates | null {
-  const decMatch = raw.match(DECIMAL_COORD_REGEX);
-  if (decMatch) {
-    const lat = applyHemisphere(parseFloat(decMatch[1]), decMatch[2]);
-    const lon = applyHemisphere(parseFloat(decMatch[3]), decMatch[4]);
-    return validateCoordinates(lat, lon);
-  }
-
-  const dmsMatch = raw.match(DMS_COORD_REGEX);
-  if (dmsMatch) {
-    const rawLat =
-      parseInt(dmsMatch[1], 10) +
-      parseInt(dmsMatch[2], 10) / 60 +
-      parseFloat(dmsMatch[3]) / 3600;
-    const rawLon =
-      parseInt(dmsMatch[5], 10) +
-      parseInt(dmsMatch[6], 10) / 60 +
-      parseFloat(dmsMatch[7]) / 3600;
-
-    const lat = applyHemisphere(rawLat, dmsMatch[4]);
-    const lon = applyHemisphere(rawLon, dmsMatch[8]);
-    return validateCoordinates(lat, lon);
-  }
-
-  return null;
-}
-
-function resolveLocation(
-  raw: string,
-  airportIndex: Map<string, AirportEntry> | null,
-  hasDbError: boolean,
-): ResolutionResult {
-  const trimmed = raw.trim();
-  if (!trimmed) return { point: null, status: '' };
-
-  const coords = parseCoordinates(trimmed);
-  if (coords) {
-    return {
-      point: coords,
-      status: `${coords.lat.toFixed(4)}°, ${coords.lon.toFixed(4)}°`,
-    };
-  }
-
-  const code = trimmed.toUpperCase();
-  if (AIRPORT_CODE_REGEX.test(code)) {
-    if (!airportIndex) {
-      return {
-        point: null,
-        status: hasDbError
-          ? 'Airport database offline'
-          : 'Loading airport database...',
-      };
-    }
-
-    const airport = airportIndex.get(code);
-    if (airport) {
-      const codeDisplay = airport.iata
-        ? `${airport.icao} / ${airport.iata}`
-        : airport.icao;
-      return {
-        point: { lat: airport.lat, lon: airport.lon },
-        status: `${codeDisplay} · ${airport.name}`,
-      };
-    }
-
-    return { point: null, status: 'Airport code not found' };
-  }
-
-  return { point: null, status: 'Enter ICAO, IATA, or lat, lon' };
-}
-
-function calculateFlightData(
-  from: Coordinates,
-  to: Coordinates,
-): FlightCalculation | null {
-  if (from.lat === to.lat && from.lon === to.lon) {
-    return null;
-  }
-
-  const fromPt: [number, number] = [from.lon, from.lat];
-  const toPt: [number, number] = [to.lon, to.lat];
-
-  const trueBearing = (bearing(fromPt, toPt) + 360) % 360;
-  const distNm = distance(fromPt, toPt, { units: 'nauticalmiles' });
-  const distKm = distance(fromPt, toPt, { units: 'kilometers' });
-
-  const { decl: declination } = wmmModel.point([from.lat, from.lon]);
-  const rawMagHeading = (trueBearing - declination + 360) % 360;
-  const roundedMag = Math.round(rawMagHeading);
-  const autopilotHdg = roundedMag === 0 ? 360 : roundedMag;
-
-  return {
-    autopilotHdg: String(autopilotHdg).padStart(3, '0'),
-    trueBearing: trueBearing.toFixed(1).padStart(5, '0'),
-    declination: `${Math.abs(declination).toFixed(1)}° ${declination >= 0 ? 'E' : 'W'}`,
-    distanceNm: Math.round(distNm).toLocaleString('en-US'),
-    distanceKm: Math.round(distKm).toLocaleString('en-US'),
-  };
-}
+const currentDate = () => new Date();
 
 function LocationField({
   id,
@@ -202,12 +50,14 @@ function LocationField({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-describedby={`${id}-status`}
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
         className="w-full h-11 px-3.5 bg-[#07090E] border border-[#1E293B] rounded text-sm font-mono tabular-nums text-slate-100 placeholder:text-slate-600 focus:outline-none focus-visible:border-sky-400 transition-colors"
       />
       <p
+        id={`${id}-status`}
         className="mt-1.5 h-4 leading-4 text-xs font-mono text-slate-400 truncate"
         title={status}
       >
@@ -217,72 +67,52 @@ function LocationField({
   );
 }
 
-export default function App() {
+export default function App({
+  loadAirportDatabase = defaultLoadAirportDatabase,
+  now = currentDate,
+}: AppProps = {}) {
   const [originInput, setOriginInput] = useState('');
   const [destinationInput, setDestinationInput] = useState('');
-  const [airportIndex, setAirportIndex] = useState<Map<
-    string,
-    AirportEntry
-  > | null>(null);
-  const [hasDbError, setHasDbError] = useState(false);
+  const [airportDatabase, setAirportDatabase] =
+    useState<AirportDatabase | null>(null);
+  const [hasAirportDatabaseError, setHasAirportDatabaseError] = useState(false);
+  const date = useMemo(() => now(), [now]);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    async function loadAirports() {
-      for (const url of AIRPORTS_CDN_URLS) {
-        try {
-          const response = await fetch(url, { signal: controller.signal });
-          if (!response.ok) continue;
+    loadAirportDatabase(controller.signal).then(
+      (database) => {
+        if (!controller.signal.aborted) setAirportDatabase(database);
+      },
+      () => {
+        if (!controller.signal.aborted) setHasAirportDatabaseError(true);
+      },
+    );
 
-          const data: Record<string, AirportEntry> = await response.json();
-          const map = new Map<string, AirportEntry>();
-
-          for (const entry of Object.values(data)) {
-            if (
-              entry &&
-              typeof entry.lat === 'number' &&
-              typeof entry.lon === 'number'
-            ) {
-              if (entry.icao) {
-                map.set(entry.icao.toUpperCase(), entry);
-              }
-              if (entry.iata && entry.iata.length === 3) {
-                map.set(entry.iata.toUpperCase(), entry);
-              }
-            }
-          }
-
-          setAirportIndex(map);
-          return;
-        } catch (err) {
-          if (err instanceof DOMException && err.name === 'AbortError') {
-            return;
-          }
-        }
-      }
-
-      setHasDbError(true);
-    }
-
-    loadAirports();
     return () => controller.abort();
-  }, []);
+  }, [loadAirportDatabase]);
 
-  const originResolved = useMemo(
-    () => resolveLocation(originInput, airportIndex, hasDbError),
-    [originInput, airportIndex, hasDbError],
+  const origin = useMemo(
+    () =>
+      resolveLocation(originInput, airportDatabase, hasAirportDatabaseError),
+    [originInput, airportDatabase, hasAirportDatabaseError],
   );
 
-  const destinationResolved = useMemo(
-    () => resolveLocation(destinationInput, airportIndex, hasDbError),
-    [destinationInput, airportIndex, hasDbError],
+  const destination = useMemo(
+    () =>
+      resolveLocation(
+        destinationInput,
+        airportDatabase,
+        hasAirportDatabaseError,
+      ),
+    [destinationInput, airportDatabase, hasAirportDatabaseError],
   );
 
-  const calculation = useMemo(() => {
-    if (!originResolved.point || !destinationResolved.point) return null;
-    return calculateFlightData(originResolved.point, destinationResolved.point);
-  }, [originResolved.point, destinationResolved.point]);
+  const route = useMemo(() => {
+    if (!origin.point || !destination.point) return null;
+    return calculateRoute(origin.point, destination.point, date);
+  }, [origin.point, destination.point, date]);
 
   const handleSwap = useCallback(() => {
     setOriginInput(destinationInput);
@@ -310,7 +140,7 @@ export default function App() {
             label="ORIGIN"
             placeholder="KJFK or 40.6413, -73.7781"
             value={originInput}
-            status={originResolved.status}
+            status={origin.status}
             onChange={setOriginInput}
           />
 
@@ -332,7 +162,7 @@ export default function App() {
             label="DESTINATION"
             placeholder="EGLL or 51.4706, -0.4619"
             value={destinationInput}
-            status={destinationResolved.status}
+            status={destination.status}
             onChange={setDestinationInput}
           />
         </div>
@@ -346,24 +176,24 @@ export default function App() {
               aria-live="polite"
               className="text-5xl leading-none font-mono font-bold tabular-nums tracking-tight text-sky-400"
             >
-              {calculation ? `${calculation.autopilotHdg}°` : '---°'}
+              {route ? `${route.magneticHeading}°` : '---°'}
             </div>
           </div>
 
           <dl className="grid grid-cols-[2.75rem_1fr] gap-x-4 gap-y-1 text-xs font-mono tabular-nums sm:min-w-[13.5rem]">
             <dt className="text-slate-500">DIST</dt>
             <dd className="text-right text-slate-300 whitespace-nowrap">
-              {calculation
-                ? `${calculation.distanceNm} NM · ${calculation.distanceKm} km`
+              {route
+                ? `${route.distanceNm} NM · ${route.distanceKm} km`
                 : '--- NM · --- km'}
             </dd>
             <dt className="text-slate-500">TRUE</dt>
             <dd className="text-right text-slate-300 whitespace-nowrap">
-              {calculation ? `${calculation.trueBearing}°` : '---.-°'}
+              {route ? `${route.trueBearing}°` : '---.-°'}
             </dd>
             <dt className="text-slate-500">VAR</dt>
             <dd className="text-right text-slate-300 whitespace-nowrap">
-              {calculation ? calculation.declination : '--.-°'}
+              {route ? route.magneticVariation : '--.-°'}
             </dd>
           </dl>
         </div>
