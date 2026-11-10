@@ -13,16 +13,29 @@ function magneticModelAt(date: Date): GeomagnetismModel {
   return cachedModel.model;
 }
 
+/** Below this distance a route has no meaningful direction. */
+export const MIN_ROUTE_DISTANCE_NM = 1;
+
+/** Why a route has no true bearing or magnetic heading. */
+export type RouteNotice = 'same-point' | 'too-close' | 'antipodal';
+
+const ROUTE_NOTICE_MESSAGES: Record<RouteNotice, string> = {
+  'same-point': 'Origin and destination are the same point',
+  'too-close': `Origin and destination too close (< ${MIN_ROUTE_DISTANCE_NM} NM)`,
+  antipodal: 'Route direction undefined (antipodal points)',
+};
+
 /** Route values in degrees, nautical miles and kilometres. */
 export interface Route {
-  /** Whole degrees, 1–360. */
-  magneticHeading: number;
-  /** Degrees, 0 ≤ x < 360. */
-  trueBearing: number;
+  /** Whole degrees, 1–360; null when the route has no direction. */
+  magneticHeading: number | null;
+  /** Degrees, 0 ≤ x < 360; null when the route has no direction. */
+  trueBearing: number | null;
   /** Degrees, east positive. */
   magneticVariation: number;
   distanceNm: number;
   distanceKm: number;
+  notice: RouteNotice | null;
 }
 
 /** Display-ready route values. */
@@ -32,6 +45,8 @@ export interface FormattedRoute {
   magneticVariation: string;
   distanceNm: string;
   distanceKm: string;
+  /** Message explaining a missing heading; empty if none. */
+  notice: string;
 }
 
 /**
@@ -46,6 +61,28 @@ export function magneticHeadingFrom(
   return rounded === 0 || rounded === 360 ? 360 : rounded;
 }
 
+function antipodeOf({ lat, lon }: Coordinates): [number, number] {
+  return [lon > 0 ? lon - 180 : lon + 180, -lat];
+}
+
+function noticeFor(
+  origin: Coordinates,
+  destination: Coordinates,
+  distanceNm: number,
+): RouteNotice | null {
+  if (origin.lat === destination.lat && origin.lon === destination.lon) {
+    return 'same-point';
+  }
+  if (distanceNm < MIN_ROUTE_DISTANCE_NM) return 'too-close';
+  const fromAntipodeNm = distance(
+    antipodeOf(origin),
+    [destination.lon, destination.lat],
+    { units: 'nauticalmiles' },
+  );
+  if (fromAntipodeNm < MIN_ROUTE_DISTANCE_NM) return 'antipodal';
+  return null;
+}
+
 /**
  * Calculates the route from origin to destination on a spherical earth.
  * `date` selects the point in time for the magnetic model.
@@ -54,36 +91,50 @@ export function calculateRoute(
   origin: Coordinates,
   destination: Coordinates,
   date: Date,
-): Route | null {
-  if (origin.lat === destination.lat && origin.lon === destination.lon) {
-    return null;
-  }
-
+): Route {
   const originPt: [number, number] = [origin.lon, origin.lat];
   const destinationPt: [number, number] = [destination.lon, destination.lat];
 
-  const trueBearing = (bearing(originPt, destinationPt) + 360) % 360;
+  const distanceNm = distance(originPt, destinationPt, {
+    units: 'nauticalmiles',
+  });
+  const distanceKm = distance(originPt, destinationPt, { units: 'kilometers' });
   const { decl: magneticVariation } = magneticModelAt(date).point([
     origin.lat,
     origin.lon,
   ]);
+  const notice = noticeFor(origin, destination, distanceNm);
+
+  const trueBearing =
+    notice === null ? (bearing(originPt, destinationPt) + 360) % 360 : null;
 
   return {
-    magneticHeading: magneticHeadingFrom(trueBearing, magneticVariation),
+    magneticHeading:
+      trueBearing === null
+        ? null
+        : magneticHeadingFrom(trueBearing, magneticVariation),
     trueBearing,
     magneticVariation,
-    distanceNm: distance(originPt, destinationPt, { units: 'nauticalmiles' }),
-    distanceKm: distance(originPt, destinationPt, { units: 'kilometers' }),
+    distanceNm,
+    distanceKm,
+    notice,
   };
 }
 
 export function formatRoute(route: Route): FormattedRoute {
   const variation = route.magneticVariation;
   return {
-    magneticHeading: String(route.magneticHeading).padStart(3, '0'),
-    trueBearing: route.trueBearing.toFixed(1).padStart(5, '0'),
+    magneticHeading:
+      route.magneticHeading === null
+        ? '---'
+        : String(route.magneticHeading).padStart(3, '0'),
+    trueBearing:
+      route.trueBearing === null
+        ? '---.-'
+        : route.trueBearing.toFixed(1).padStart(5, '0'),
     magneticVariation: `${Math.abs(variation).toFixed(1)}° ${variation >= 0 ? 'E' : 'W'}`,
     distanceNm: Math.round(route.distanceNm).toLocaleString('en-US'),
     distanceKm: Math.round(route.distanceKm).toLocaleString('en-US'),
+    notice: route.notice ? ROUTE_NOTICE_MESSAGES[route.notice] : '',
   };
 }
