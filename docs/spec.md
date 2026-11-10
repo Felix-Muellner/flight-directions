@@ -76,7 +76,7 @@ Given a resolved origin and destination:
 - **Distance:** great-circle distance, shown in NM and km, rounded to whole
   units with thousands separators.
 - **True bearing:** initial great-circle bearing at the origin, 0–360°,
-  shown with one decimal, zero-padded (`051.3°`).
+  shown with one decimal, zero-padded (`051.4°`).
 - **Magnetic variation:** WMM2025 at the origin for the current date, shown
   as `x.x° E` or `x.x° W` (east positive).
 - **Magnetic heading:** true bearing minus magnetic variation, normalised to
@@ -114,8 +114,8 @@ TRUE, VAR and DIST stay visible in both zones.
 
 ### Verification
 
-Expected values come from independent published sources, never from the
-current code's output:
+Expected values come from published or independently calculated sources,
+never from the current code's output:
 
 - Magnetic variation: NOAA WMM2025 official test values (fixed dates and
   locations), tolerance 0.1°.
