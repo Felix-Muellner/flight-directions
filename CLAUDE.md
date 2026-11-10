@@ -6,26 +6,13 @@ My prompt may override this file, except Section 6. List every override under "D
 
 ---
 
-## 1. Setup (first run only — delete this section when done)
-
-1. If the repo contains more than one stack or project, stop and ask.
-2. Before the first commit, make sure `.gitignore` covers the stack and secrets. If anything already tracked should not be (secrets, build output), stop and tell me. Cleaning history is my decision.
-3. Propose, together, and wait for my confirmation:
-   - the commands for Section 2
-   - `.devcontainer/devcontainer.json`: create it if missing, add the features the stack needs, keep GitHub CLI and the Claude Code install. After committing, tell me to rebuild the environment.
-4. Run existing tests and report failures and suspicious tests. Do not fix or delete them; fixes become issues.
-5. If tests, lint, typecheck, CI on PRs, secret scanning, or dependency audit are missing: propose one bootstrap plan, wait for confirmation, implement it in one PR. TDD is waived for it. No feature work until it is merged.
-6. Delete this section and replace the placeholders in Section 2.
-
----
-
 ## 2. Project Commands
 
-- **Build:** `{{BUILD_COMMAND}}`
-- **Test:** `{{TEST_COMMAND}}`
-- **Lint / Format:** `{{LINT_COMMAND}}`
-- **Typecheck:** `{{TYPECHECK_COMMAND}}`
-- **Secret scan:** `{{SECRET_SCAN_COMMAND}}`
+- **Build:** `npm run build`
+- **Test:** `npm test`
+- **Lint / Format:** `npm run lint` (fix: `npm run format`)
+- **Typecheck:** `npm run typecheck`
+- **Secret scan:** `npm run secrets`
 
 ---
 
