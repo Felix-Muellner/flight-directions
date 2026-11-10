@@ -13,28 +13,42 @@ export type AirportDatabaseLoader = (
   signal: AbortSignal,
 ) => Promise<AirportDatabase>;
 
+/** mwgg/Airports commit the airport database is pinned to. */
+export const AIRPORT_DATABASE_COMMIT =
+  'a89e4e0dda9d9878337e2da190ebe1ef1d6af705';
+
 const AIRPORT_DATABASE_URLS = [
-  'https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json',
-  'https://raw.githubusercontent.com/mwgg/Airports/master/airports.json',
+  `https://cdn.jsdelivr.net/gh/mwgg/Airports@${AIRPORT_DATABASE_COMMIT}/airports.json`,
+  `https://raw.githubusercontent.com/mwgg/Airports/${AIRPORT_DATABASE_COMMIT}/airports.json`,
 ] as const;
 
+/**
+ * Indexes airports by upper-case ICAO and IATA code.
+ * Entries without numeric lat/lon are skipped. ICAO codes take precedence
+ * over IATA codes; an IATA code shared by several airports is left out.
+ */
 export function buildAirportDatabase(
   data: Record<string, AirportEntry>,
 ): AirportDatabase {
-  const database = new Map<string, AirportEntry>();
+  const entries = Object.values(data).filter(
+    (entry) =>
+      entry && typeof entry.lat === 'number' && typeof entry.lon === 'number',
+  );
 
-  for (const entry of Object.values(data)) {
-    if (
-      entry &&
-      typeof entry.lat === 'number' &&
-      typeof entry.lon === 'number'
-    ) {
-      if (entry.icao) {
-        database.set(entry.icao.toUpperCase(), entry);
-      }
-      if (entry.iata && entry.iata.length === 3) {
-        database.set(entry.iata.toUpperCase(), entry);
-      }
+  const database = new Map<string, AirportEntry>();
+  for (const entry of entries) {
+    if (entry.icao) database.set(entry.icao.toUpperCase(), entry);
+  }
+
+  const byIata = new Map<string, AirportEntry[]>();
+  for (const entry of entries) {
+    if (entry.iata?.length !== 3) continue;
+    const iata = entry.iata.toUpperCase();
+    byIata.set(iata, [...(byIata.get(iata) ?? []), entry]);
+  }
+  for (const [iata, airports] of byIata) {
+    if (airports.length === 1 && !database.has(iata)) {
+      database.set(iata, airports[0]);
     }
   }
 
