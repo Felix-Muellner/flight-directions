@@ -1,0 +1,122 @@
+{
+  "KJFK": {
+    "icao": "KJFK",
+    "iata": "JFK",
+    "name": "John F Kennedy International Airport",
+    "city": "New York",
+    "state": "New York",
+    "country": "US",
+    "elevation": 13,
+    "lat": 40.63980103,
+    "lon": -73.77890015,
+    "tz": "America/New_York"
+  },
+  "EGLL": {
+    "icao": "EGLL",
+    "iata": "LHR",
+    "name": "London Heathrow Airport",
+    "city": "London",
+    "state": "England",
+    "country": "GB",
+    "elevation": 83,
+    "lat": 51.4706001282,
+    "lon": -0.4619410038,
+    "tz": "Europe/London"
+  },
+  "YSSY": {
+    "icao": "YSSY",
+    "iata": "SYD",
+    "name": "Sydney Kingsford Smith International Airport",
+    "city": "Sydney",
+    "state": "New South Wales",
+    "country": "AU",
+    "elevation": 21,
+    "lat": -33.9460983276,
+    "lon": 151.1770019531,
+    "tz": "Australia/Sydney"
+  },
+  "EDAB": {
+    "icao": "EDAB",
+    "iata": "",
+    "name": "Bautzen Airport",
+    "city": "Bautzen",
+    "state": "Saxony",
+    "country": "DE",
+    "elevation": 568,
+    "lat": 51.193611145,
+    "lon": 14.5197219849,
+    "tz": "Europe/Berlin"
+  },
+  "XDA1": {
+    "icao": "XDA1",
+    "iata": "DUP",
+    "name": "Synthetic Duplicate IATA One",
+    "city": "",
+    "state": "",
+    "country": "",
+    "elevation": 0,
+    "lat": 10,
+    "lon": 10,
+    "tz": ""
+  },
+  "XDA2": {
+    "icao": "XDA2",
+    "iata": "DUP",
+    "name": "Synthetic Duplicate IATA Two",
+    "city": "",
+    "state": "",
+    "country": "",
+    "elevation": 0,
+    "lat": 20,
+    "lon": 20,
+    "tz": ""
+  },
+  "XIC": {
+    "icao": "XIC",
+    "iata": "",
+    "name": "Synthetic Three-Character ICAO",
+    "city": "",
+    "state": "",
+    "country": "",
+    "elevation": 0,
+    "lat": 30,
+    "lon": 30,
+    "tz": ""
+  },
+  "XIA1": {
+    "icao": "XIA1",
+    "iata": "XIC",
+    "name": "Synthetic IATA Equal To Other ICAO",
+    "city": "",
+    "state": "",
+    "country": "",
+    "elevation": 0,
+    "lat": 40,
+    "lon": 40,
+    "tz": ""
+  },
+  "XBAD": {
+    "icao": "XBAD",
+    "iata": "BAD",
+    "name": "Synthetic Missing Coordinates",
+    "city": "",
+    "state": "",
+    "country": "",
+    "elevation": 0,
+    "lat": "51.0",
+    "lon": null,
+    "tz": ""
+  },
+  "xlow": {
+    "icao": "xlow",
+    "iata": "lwr",
+    "name": "Synthetic Lower-Case Codes",
+    "city": "",
+    "state": "",
+    "country": "",
+    "elevation": 0,
+    "lat": 50,
+    "lon": 50,
+    "tz": ""
+  }
+}
