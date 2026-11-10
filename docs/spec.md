@@ -85,13 +85,14 @@ Given a resolved origin and destination:
 
 ### Degenerate routes
 
-`MIN_ROUTE_DISTANCE_NM = 1` (one named constant).
+`MIN_ROUTE_DISTANCE_NM = 1` (one named constant). The message appears in a status line below
+the route values.
 
-| Case | HDG | TRUE | DIST | Message |
-|---|---|---|---|---|
-| Identical coordinates | `---°` | `---.-°` | shown | `Origin and destination are the same point` |
-| Distance < 1 NM | `---°` | `---.-°` | shown | `Origin and destination too close (< 1 NM)` |
-| Within 1 NM of antipodal | `---°` | `---.-°` | shown | `Route direction undefined (antipodal points)` |
+| Case | HDG | TRUE | VAR | DIST | Message |
+|---|---|---|---|---|---|
+| Identical coordinates | `---°` | `---.-°` | shown | shown | `Origin and destination are the same point` |
+| Distance < 1 NM | `---°` | `---.-°` | shown | shown | `Origin and destination too close (< 1 NM)` |
+| Within 1 NM of antipodal | `---°` | `---.-°` | shown | shown | `Route direction undefined (antipodal points)` |
 
 ### Magnetic pole zones
 
