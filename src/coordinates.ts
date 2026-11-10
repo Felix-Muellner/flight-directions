@@ -47,7 +47,11 @@ function validateCoordinates(lat: number, lon: number): Coordinates | null {
 }
 
 export function parseCoordinates(raw: string): Coordinates | null {
-  const dec = raw.match(DECIMAL_COORD_REGEX);
+  // Collapsing whitespace runs keeps the overlapping whitespace quantifiers
+  // in the patterns from backtracking catastrophically on long input.
+  const input = raw.replace(/\s+/g, ' ');
+
+  const dec = input.match(DECIMAL_COORD_REGEX);
   if (dec) {
     const lat = applyHemisphere(dec[1], parseFloat(dec[2]), dec[3]);
     const lon = applyHemisphere(dec[4], parseFloat(dec[5]), dec[6]);
@@ -55,7 +59,7 @@ export function parseCoordinates(raw: string): Coordinates | null {
     return validateCoordinates(lat, lon);
   }
 
-  const dms = raw.match(DMS_COORD_REGEX);
+  const dms = input.match(DMS_COORD_REGEX);
   if (dms) {
     const latDegrees = dmsToDegrees(dms[1], dms[2], dms[3]);
     const lonDegrees = dmsToDegrees(dms[5], dms[6], dms[7]);
