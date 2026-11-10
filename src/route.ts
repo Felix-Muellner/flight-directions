@@ -16,18 +16,37 @@ function magneticModelAt(date: Date): GeomagnetismModel {
 /** Below this distance a route has no meaningful direction. */
 export const MIN_ROUTE_DISTANCE_NM = 1;
 
-/** Why a route has no true bearing or magnetic heading. */
-export type RouteNotice = 'same-point' | 'too-close' | 'antipodal';
+/** NOAA WMM zone near a magnetic pole, judged by horizontal field strength. */
+export type PoleZone = 'blackout' | 'caution';
+
+/** Horizontal field strength (nT) below which a zone applies (NOAA WMM). */
+const BLACKOUT_ZONE_MAX_H = 2000;
+const CAUTION_ZONE_MAX_H = 6000;
+
+/**
+ * Why a route shows no true bearing and magnetic heading (degenerate
+ * routes), no magnetic heading (blackout zone), or a magnetic heading that
+ * needs care (caution zone).
+ */
+export type RouteNotice = 'same-point' | 'too-close' | 'antipodal' | PoleZone;
 
 const ROUTE_NOTICE_MESSAGES: Record<RouteNotice, string> = {
   'same-point': 'Origin and destination are the same point',
   'too-close': `Origin and destination too close (< ${MIN_ROUTE_DISTANCE_NM} NM)`,
   antipodal: 'Route direction undefined (antipodal points)',
+  blackout: 'Magnetic heading unreliable near magnetic pole',
+  caution: 'Near magnetic pole',
 };
+
+export function poleZoneFor(horizontalIntensity: number): PoleZone | null {
+  if (horizontalIntensity < BLACKOUT_ZONE_MAX_H) return 'blackout';
+  if (horizontalIntensity < CAUTION_ZONE_MAX_H) return 'caution';
+  return null;
+}
 
 /** Route values in degrees, nautical miles and kilometres. */
 export interface Route {
-  /** Whole degrees, 1–360; null when the route has no direction. */
+  /** Whole degrees, 1–360; null without a route direction or in the blackout zone. */
   magneticHeading: number | null;
   /** Degrees, 0 ≤ x < 360; null when the route has no direction. */
   trueBearing: number | null;
@@ -100,18 +119,20 @@ export function calculateRoute(
     units: 'nauticalmiles',
   });
   const distanceKm = distance(originPt, destinationPt, { units: 'kilometers' });
-  const { decl: magneticVariation } = magneticModelAt(date).point([
+  const { decl: magneticVariation, h } = magneticModelAt(date).point([
     origin.lat,
     origin.lon,
   ]);
-  const notice = noticeFor(origin, destination, distanceNm);
+  const degenerate = noticeFor(origin, destination, distanceNm);
+  const poleZone = poleZoneFor(h);
+  const notice = degenerate ?? poleZone;
 
   const trueBearing =
-    notice === null ? (bearing(originPt, destinationPt) + 360) % 360 : null;
+    degenerate === null ? (bearing(originPt, destinationPt) + 360) % 360 : null;
 
   return {
     magneticHeading:
-      trueBearing === null
+      trueBearing === null || poleZone === 'blackout'
         ? null
         : magneticHeadingFrom(trueBearing, magneticVariation),
     trueBearing,

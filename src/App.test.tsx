@@ -160,4 +160,28 @@ describe('App', () => {
       screen.queryByText(/Origin and destination|Route direction/),
     ).toBeNull();
   });
+
+  it('withholds the magnetic heading in the blackout zone', async () => {
+    const { user } = renderApp();
+    await user.type(originInput(), '86, 140');
+    await user.type(destinationInput(), '0, 0');
+    expect(
+      screen.getByText('Magnetic heading unreliable near magnetic pole'),
+    ).toBeTruthy();
+    expect(magneticHeading()).toBe('---°');
+    expect(valueFor('TRUE')).toMatch(/^\d{3}\.\d°$/);
+    expect(valueFor('VAR')).toMatch(/^\d+\.\d° [EW]$/);
+    expect(valueFor('DIST')).toMatch(/^[\d,]+ NM · [\d,]+ km$/);
+  });
+
+  it('shows the magnetic heading with a note in the caution zone', async () => {
+    const { user } = renderApp();
+    await user.type(originInput(), '75, -100');
+    await user.type(destinationInput(), '0, 0');
+    expect(screen.getByText('Near magnetic pole')).toBeTruthy();
+    expect(magneticHeading()).toMatch(/^\d{3}°$/);
+    expect(valueFor('TRUE')).toMatch(/^\d{3}\.\d°$/);
+    expect(valueFor('VAR')).toMatch(/^\d+\.\d° [EW]$/);
+    expect(valueFor('DIST')).toMatch(/^[\d,]+ NM · [\d,]+ km$/);
+  });
 });

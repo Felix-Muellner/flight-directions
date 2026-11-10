@@ -104,6 +104,9 @@ Judged at the origin from the WMM horizontal field strength `H`:
 | Caution zone | 2,000 ≤ H < 6,000 nT | shown | `Near magnetic pole` |
 
 TRUE, VAR and DIST stay visible in both zones.
+A degenerate route takes precedence: its message replaces the zone message.
+Thresholds follow NOAA's WMM definitions; the zone message uses the same
+status line as degenerate routes.
 
 ### Airport database
 
