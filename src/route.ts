@@ -1,7 +1,17 @@
 import bearing from '@turf/bearing';
 import distance from '@turf/distance';
-import geomagnetism from 'geomagnetism';
+import geomagnetism, { type GeomagnetismModel } from 'geomagnetism';
 import type { Coordinates } from './coordinates.ts';
+
+let cachedModel: { time: number; model: GeomagnetismModel } | null = null;
+
+function magneticModelAt(date: Date): GeomagnetismModel {
+  const time = date.getTime();
+  if (cachedModel?.time !== time) {
+    cachedModel = { time, model: geomagnetism.model(date) };
+  }
+  return cachedModel.model;
+}
 
 /** Display-ready route values. */
 export interface Route {
@@ -32,9 +42,10 @@ export function calculateRoute(
   const distNm = distance(originPt, destinationPt, { units: 'nauticalmiles' });
   const distKm = distance(originPt, destinationPt, { units: 'kilometers' });
 
-  const { decl: magneticVariation } = geomagnetism
-    .model(date)
-    .point([origin.lat, origin.lon]);
+  const { decl: magneticVariation } = magneticModelAt(date).point([
+    origin.lat,
+    origin.lon,
+  ]);
   const rawMagneticHeading = (trueBearing - magneticVariation + 360) % 360;
   const rounded = Math.round(rawMagneticHeading);
   const magneticHeading = rounded === 0 ? 360 : rounded;
