@@ -61,6 +61,7 @@ export function magneticHeadingFrom(
   return rounded === 0 || rounded === 360 ? 360 : rounded;
 }
 
+/** Antipode as [lon, lat], longitude kept within ±180. */
 function antipodeOf({ lat, lon }: Coordinates): [number, number] {
   return [lon > 0 ? lon - 180 : lon + 180, -lat];
 }

@@ -9,8 +9,8 @@ import {
 
 const DATE = new Date('2026-06-01T00:00:00Z');
 
-function route(origin: Coordinates, target: Coordinates): Route {
-  const result = calculateRoute(origin, target, DATE);
+function route(origin: Coordinates, destination: Coordinates): Route {
+  const result = calculateRoute(origin, destination, DATE);
   if (!result) throw new Error('expected a route');
   return result;
 }
