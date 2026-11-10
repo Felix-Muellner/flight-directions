@@ -77,7 +77,7 @@ describe('degenerate routes', () => {
     expect(result.notice).toBe('antipodal');
     expect(result.trueBearing).toBeNull();
     expect(result.magneticHeading).toBeNull();
-    expect(result.distanceNm).toBeCloseTo(10_800.5, 0);
+    expect(result.distanceNm).toBeCloseTo((Math.PI * 6371.0088) / 1.852, 3);
   });
 
   it.each([0.1, 0.99])('%f NM from antipodal has no route direction', (nm) => {
