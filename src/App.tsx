@@ -11,7 +11,7 @@ import {
   loadAirportDatabase as defaultLoadAirportDatabase,
 } from './airportDatabase.ts';
 import { resolveLocation } from './location.ts';
-import { calculateRoute } from './route.ts';
+import { calculateRoute, formatRoute } from './route.ts';
 
 interface LocationFieldProps {
   id: string;
@@ -111,7 +111,8 @@ export default function App({
 
   const route = useMemo(() => {
     if (!origin.point || !destination.point) return null;
-    return calculateRoute(origin.point, destination.point, date);
+    const calculated = calculateRoute(origin.point, destination.point, date);
+    return calculated ? formatRoute(calculated) : null;
   }, [origin.point, destination.point, date]);
 
   const handleSwap = useCallback(() => {
