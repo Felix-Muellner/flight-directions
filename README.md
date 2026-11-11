@@ -26,9 +26,8 @@ Full behaviour: [`docs/spec.md`](docs/spec.md).
 
 ## How it was built
 
-This started as an AI-generated prototype (Google AI Studio). I then turned it
-into something I can stand behind:
-
+This started as an AI-generated prototype (Google AI Studio).
+I then hardened it with Claude Code, using a spec-first, test-first workflow:
 - **Spec first:** behaviour is written down in [`docs/spec.md`](docs/spec.md),
   terms in [`context.md`](context.md); every behaviour change has an issue.
 - **Tests first:** magnetic variation is checked against NOAA's official
