@@ -72,10 +72,11 @@ without hemisphere letters, longitude-first input, airport name search.
 
 Given a resolved origin and destination:
 
+- **Earth model:** sphere with mean radius 6,371.0088 km; 1 NM = 1.852 km.
 - **Distance:** great-circle distance, shown in NM and km, rounded to whole
   units with thousands separators.
 - **True bearing:** initial great-circle bearing at the origin, 0–360°,
-  shown with one decimal, zero-padded (`051.3°`).
+  shown with one decimal, zero-padded (`051.4°`).
 - **Magnetic variation:** WMM2025 at the origin for the current date, shown
   as `x.x° E` or `x.x° W` (east positive).
 - **Magnetic heading:** true bearing minus magnetic variation, normalised to
@@ -84,13 +85,14 @@ Given a resolved origin and destination:
 
 ### Degenerate routes
 
-`MIN_ROUTE_DISTANCE_NM = 1` (one named constant).
+`MIN_ROUTE_DISTANCE_NM = 1` (one named constant). The message appears in a status line below
+the route values.
 
-| Case | HDG | TRUE | DIST | Message |
-|---|---|---|---|---|
-| Identical coordinates | `---°` | `---.-°` | shown | `Origin and destination are the same point` |
-| Distance < 1 NM | `---°` | `---.-°` | shown | `Origin and destination too close (< 1 NM)` |
-| Within 1 NM of antipodal | `---°` | `---.-°` | shown | `Route direction undefined (antipodal points)` |
+| Case | HDG | TRUE | VAR | DIST | Message |
+|---|---|---|---|---|---|
+| Identical coordinates | `---°` | `---.-°` | shown | shown | `Origin and destination are the same point` |
+| Distance < 1 NM | `---°` | `---.-°` | shown | shown | `Origin and destination too close (< 1 NM)` |
+| Within 1 NM of antipodal | `---°` | `---.-°` | shown | shown | `Route direction undefined (antipodal points)` |
 
 ### Magnetic pole zones
 
@@ -102,6 +104,9 @@ Judged at the origin from the WMM horizontal field strength `H`:
 | Caution zone | 2,000 ≤ H < 6,000 nT | shown | `Near magnetic pole` |
 
 TRUE, VAR and DIST stay visible in both zones.
+A degenerate route takes precedence: its message replaces the zone message.
+Thresholds follow NOAA's WMM definitions; the zone message uses the same
+status line as degenerate routes.
 
 ### Airport database
 
@@ -113,14 +118,14 @@ TRUE, VAR and DIST stay visible in both zones.
 
 ### Verification
 
-Expected values come from independent published sources, never from the
-current code's output:
+Expected values come from published or independently calculated sources,
+never from the current code's output:
 
 - Magnetic variation: NOAA WMM2025 official test values (fixed dates and
   locations), tolerance 0.1°.
-- True bearing and distance: independently calculated reference pairs
-  (e.g. KJFK→EGLL ≈ 2,999 NM), cross-checked with a published geodesy
-  calculator; tolerance 0.1° and 1 NM.
+- True bearing and distance: independently calculated reference pairs on
+  the spherical earth model (e.g. KJFK→EGLL ≈ 2,991 NM), using the standard
+  haversine and forward-azimuth formulas; tolerance 0.1° and 1 NM.
 - Magnetic heading: edge cases for rounding, `0 → 360`, wrap near north, and
   east/west variation.
 - Component tests (React Testing Library + jsdom, airport database stubbed):

@@ -8,3 +8,4 @@ coverage/
 *.pem
 *.key
 .tools/
+.claude/worktrees/

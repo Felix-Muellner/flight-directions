@@ -34,6 +34,7 @@ A minimalist magnetic heading and distance calculator designed for Microsoft Fli
 
 ### Features
 - **Flexible Input Formats**: Accepts 4-letter ICAO airport codes (e.g., `KJFK`), 3-letter IATA airport codes (e.g., `JFK`), decimal coordinates (e.g., `40.6413, -73.7781`).
-- **Initial Magnetic Heading (`HDG`)**: Calculates the initial forward azimuth and adjusts for local magnetic variation at the departure point using the World Magnetic Model, outputting a standard 3-digit autopilot heading.
-- **Route Telemetry**: Displays great-circle distance in nautical miles (`NM`) and kilometers (`km`), true initial bearing (`TRUE`), and local magnetic declination (`VAR`).
-- **Global Airport Lookup**: The prompt included a restriction to not hardcode an airport list and use free open sources instead.
+- **Magnetic Heading (`HDG`)**: Initial great-circle true bearing corrected by the magnetic variation at the origin (World Magnetic Model 2025), shown as three digits (`001`–`360`) for the autopilot `HDG`.
+- **Route Telemetry**: Displays great-circle distance in nautical miles (`NM`) and kilometers (`km`), true bearing (`TRUE`), and magnetic variation at the origin (`VAR`).
+- **Safety Rules**: Invalid coordinates are rejected; no magnetic heading is shown for identical, too-close (< 1 NM) or antipodal points, or in the blackout zone near a magnetic pole. Details: [`docs/spec.md`](docs/spec.md).
+- **Global Airport Lookup**: The prompt included a restriction to not hardcode airports and use free open sources instead. The airport database ([mwgg/Airports](https://github.com/mwgg/Airports)) is fetched at runtime, pinned to a fixed commit.
