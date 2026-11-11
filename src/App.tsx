@@ -80,7 +80,7 @@ function LocationField({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onBlur={() => setHasLeftField(true)}
+        onBlur={() => setHasLeftField(severity === 'error')}
         aria-describedby={`${id}-status`}
         aria-invalid={style === 'error' ? true : undefined}
         placeholder={placeholder}

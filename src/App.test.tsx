@@ -189,6 +189,39 @@ describe('App', () => {
       expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
       expect(statusElement(originInput()).dataset.style).toBe('neutral');
     });
+
+    it('does not mark an error while typing after leaving a valid field', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48.2, 14');
+      await user.tab();
+      await user.click(originInput());
+      await user.type(originInput(), 'x');
+      expect(statusOf(originInput())).toBe('Enter ICAO, IATA, or lat, lon');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('does not mark an error while typing after leaving an empty field', async () => {
+      const { user } = renderApp();
+      await user.click(originInput());
+      await user.tab();
+      await user.click(originInput());
+      await user.type(originInput(), 'K');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('removes the error style when an error is edited straight into valid input', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48.2, 14x');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      await user.click(originInput());
+      await user.keyboard('{Backspace}');
+      expect(statusOf(originInput())).toBe('48.2000°, 14.0000°');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
   });
 
   it('shows route values once origin and destination resolve', async () => {
