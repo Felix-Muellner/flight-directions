@@ -20,9 +20,7 @@ function route(
   destination: Coordinates,
   date = new Date('2026-06-01T00:00:00Z'),
 ): Route {
-  const result = calculateRoute(origin, destination, date);
-  if (!result) throw new Error('expected a route');
-  return result;
+  return calculateRoute(origin, destination, date);
 }
 
 /**
