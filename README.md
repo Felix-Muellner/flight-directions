@@ -16,9 +16,10 @@ autopilot `HDG`.
   magnetic variation at the origin (World Magnetic Model 2025), shown as
   `001`–`360`. Outside 2025–2029 a notice says the model has expired.
 - **Route values:** distance in NM and km, true bearing, magnetic variation.
-- **Safety rules:** invalid coordinates are rejected; no magnetic heading for
-  identical, too-close (< 1 NM) or antipodal points, or in the blackout zone
-  near a magnetic pole; a warning in the caution zone.
+- **Safety rules:** invalid coordinates are rejected with a message naming
+  the problem; no magnetic heading for identical, too-close (< 1 NM) or
+  antipodal points, or in the blackout zone near a magnetic pole; a warning in
+  the caution zone.
 - **Airport database:** [mwgg/Airports](https://github.com/mwgg/Airports),
   loaded at runtime from a pinned commit, with a fallback source.
 
@@ -60,6 +61,8 @@ npm run secrets      # secret scan (gitleaks, downloaded to .tools/ on first run
 ## Status
 
 - **Milestone 1 — Harden:** done.
+- **Milestone 1.5 — Polish:** in progress (clear input errors, validated
+  airport database, display edge cases).
 - **Milestone 2 — Snapshot and deploy:** next (bundled airport database, live
   demo on GitHub Pages).
 

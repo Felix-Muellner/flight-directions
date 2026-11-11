@@ -143,6 +143,7 @@ describe('resolveLocation with the airport database', () => {
     expect(resolve('EDAB')).toEqual({
       point: { lat: 51.193611145, lon: 14.5197219849 },
       status: 'EDAB · Bautzen Airport',
+      severity: 'none',
     });
   });
 
@@ -150,6 +151,7 @@ describe('resolveLocation with the airport database', () => {
     expect(resolve('DUP')).toEqual({
       point: null,
       status: 'Airport code not found',
+      severity: 'error',
     });
   });
 });
