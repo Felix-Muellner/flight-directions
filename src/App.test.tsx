@@ -173,6 +173,41 @@ describe('App', () => {
       expect(statusElement(originInput()).dataset.style).toBe('neutral');
     });
 
+    it('marks not found as an error when the airport database arrives after leaving the field', async () => {
+      let resolveDatabase: (database: AirportDatabase) => void = () => {};
+      const { user } = renderApp(
+        () =>
+          new Promise<AirportDatabase>((resolve) => {
+            resolveDatabase = resolve;
+          }),
+      );
+      await user.type(originInput(), 'ZZZZ');
+      expect(statusOf(originInput())).toBe('Loading airport database...');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+
+      resolveDatabase(fixtureDatabase);
+      await screen.findByText('Airport code not found');
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('error');
+    });
+
+    it('does not mark a loading airport code that is found after leaving the field', async () => {
+      let resolveDatabase: (database: AirportDatabase) => void = () => {};
+      const { user } = renderApp(
+        () =>
+          new Promise<AirportDatabase>((resolve) => {
+            resolveDatabase = resolve;
+          }),
+      );
+      await user.type(originInput(), 'KJFK');
+      await user.tab();
+      resolveDatabase(fixtureDatabase);
+      await screen.findByText(/John F Kennedy/);
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
     it('shows the offline airport database as a warning, not an error', async () => {
       const { user } = renderApp(failsToLoad);
       await user.type(originInput(), 'KJFK');
