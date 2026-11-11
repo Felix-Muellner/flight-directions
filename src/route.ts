@@ -143,8 +143,20 @@ export function calculateRoute(
   };
 }
 
+/** One decimal, zero-padded; a bearing that rounds to 0.0 is north, shown as 360.0. */
+function formatTrueBearing(bearing: number): string {
+  const rounded = bearing.toFixed(1);
+  return (rounded === '0.0' ? '360.0' : rounded).padStart(5, '0');
+}
+
+/** `x.x° E` / `x.x° W`; a value that rounds to 0.0 has no direction. */
+function formatMagneticVariation(variation: number): string {
+  const shown = Math.abs(variation).toFixed(1);
+  if (shown === '0.0') return '0.0°';
+  return `${shown}° ${variation > 0 ? 'E' : 'W'}`;
+}
+
 export function formatRoute(route: Route): FormattedRoute {
-  const variation = route.magneticVariation;
   return {
     magneticHeading:
       route.magneticHeading === null
@@ -153,8 +165,8 @@ export function formatRoute(route: Route): FormattedRoute {
     trueBearing:
       route.trueBearing === null
         ? '---.-'
-        : route.trueBearing.toFixed(1).padStart(5, '0'),
-    magneticVariation: `${Math.abs(variation).toFixed(1)}° ${variation >= 0 ? 'E' : 'W'}`,
+        : formatTrueBearing(route.trueBearing),
+    magneticVariation: formatMagneticVariation(route.magneticVariation),
     distanceNm: Math.round(route.distanceNm).toLocaleString('en-US'),
     distanceKm: Math.round(route.distanceKm).toLocaleString('en-US'),
     notice: route.notice ? ROUTE_NOTICE_MESSAGES[route.notice] : '',

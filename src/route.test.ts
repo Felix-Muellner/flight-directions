@@ -215,6 +215,33 @@ describe('formatRoute', () => {
     );
   });
 
+  it.each([
+    [359.96, '360.0'],
+    [359.99, '360.0'],
+    [0, '360.0'],
+    [0.04, '360.0'],
+    [359.94, '359.9'],
+    [0.06, '000.1'],
+  ])('shows true bearing %f as %s (north is 360.0)', (trueBearing, shown) => {
+    expect(formatRoute({ ...base, trueBearing }).trueBearing).toBe(shown);
+  });
+
+  it.each([
+    [0, '0.0°'],
+    [-0, '0.0°'],
+    [0.04, '0.0°'],
+    [-0.04, '0.0°'],
+    [0.06, '0.1° E'],
+    [-0.06, '0.1° W'],
+  ])(
+    'shows magnetic variation %f as %s (no E/W at zero)',
+    (magneticVariation, shown) => {
+      expect(
+        formatRoute({ ...base, magneticVariation }).magneticVariation,
+      ).toBe(shown);
+    },
+  );
+
   it('formats magnetic variation as x.x° E/W', () => {
     expect(
       formatRoute({ ...base, magneticVariation: 1.28 }).magneticVariation,
