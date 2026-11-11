@@ -20,8 +20,6 @@ interface LocationFieldProps {
   value: string;
   status: string;
   severity: StatusSeverity;
-  /** The input resolved to a point. */
-  resolved: boolean;
   onChange: (value: string) => void;
 }
 
@@ -51,25 +49,18 @@ function LocationField({
   value,
   status,
   severity,
-  resolved,
   onChange,
 }: LocationFieldProps) {
-  // The error style waits until the field has been left with input that
-  // did not resolve, so a half-typed input does not flash red. Judging by
-  // "unresolved" rather than the current severity also covers a code that is
-  // still loading when the field is left and later turns out not to exist.
-  // It clears as soon as the input is empty or resolves.
-  const isEmpty = value.trim() === '';
-  const [leftUnresolved, setLeftUnresolved] = useState(false);
-  useEffect(() => {
-    if (isEmpty || resolved) setLeftUnresolved(false);
-  }, [isEmpty, resolved]);
-
+  // The error style shows only while the field is not focused, so a
+  // half-typed input does not flash red. It depends on nothing but the
+  // current input and focus, so a swap or a late airport database needs no
+  // extra handling.
+  const [focused, setFocused] = useState(false);
   const style =
     severity === 'error'
-      ? leftUnresolved
-        ? 'error'
-        : 'neutral'
+      ? focused
+        ? 'neutral'
+        : 'error'
       : severity === 'warning'
         ? 'warning'
         : 'neutral';
@@ -87,7 +78,8 @@ function LocationField({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onBlur={() => setLeftUnresolved(!isEmpty && !resolved)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         aria-describedby={`${id}-status`}
         aria-invalid={style === 'error' ? true : undefined}
         placeholder={placeholder}
@@ -182,7 +174,6 @@ export default function App({
             value={originInput}
             status={origin.status}
             severity={origin.severity}
-            resolved={origin.point !== null}
             onChange={setOriginInput}
           />
 
@@ -206,7 +197,6 @@ export default function App({
             value={destinationInput}
             status={destination.status}
             severity={destination.severity}
-            resolved={destination.point !== null}
             onChange={setDestinationInput}
           />
         </div>
