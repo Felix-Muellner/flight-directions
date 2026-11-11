@@ -102,15 +102,17 @@ describe('parseCoordinates: not coordinates', () => {
 });
 
 describe('resolveLocation with invalid coordinates', () => {
-  it.each(['-40.5 N, 73.7 W', `40°60'00"N 73°46'41"W`, '90.0001, 0'])(
-    'shows the input hint for %s',
-    (raw) => {
-      expect(resolveLocation(raw, null, false)).toEqual({
-        point: null,
-        status: 'Enter ICAO, IATA, or lat, lon',
-      });
-    },
-  );
+  it.each([
+    ['-40.5 N, 73.7 W', 'Sign contradicts hemisphere letter'],
+    [`40°60'00"N 73°46'41"W`, 'Minutes and seconds must be below 60'],
+    ['90.0001, 0', 'Latitude must be between 90° S and 90° N'],
+  ])('names the problem for %s', (raw, status) => {
+    expect(resolveLocation(raw, null, false)).toEqual({
+      point: null,
+      status,
+      severity: 'error',
+    });
+  });
 });
 
 describe('parseCoordinates: performance', () => {
