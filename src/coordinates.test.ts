@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCoordinates } from './coordinates.ts';
+import { checkCoordinates, parseCoordinates } from './coordinates.ts';
 import { resolveLocation } from './location.ts';
 
 function expectPoint(raw: string, lat: number, lon: number) {
@@ -99,6 +99,45 @@ describe('parseCoordinates: not coordinates', () => {
       expect(parseCoordinates(raw)).toBeNull();
     },
   );
+});
+
+describe('checkCoordinates: problems', () => {
+  it.each([
+    ['-48.2 N, 14.0', 'sign-contradicts-hemisphere'],
+    ['10, -73.7 E', 'sign-contradicts-hemisphere'],
+    ['+10 S, 20', 'sign-contradicts-hemisphere'],
+    [`48°61'00"N 14°00'00"E`, 'minutes-or-seconds-too-large'],
+    [`48°00'60"N 14°00'00"E`, 'minutes-or-seconds-too-large'],
+    [`48°00'00"N 14°60'00"E`, 'minutes-or-seconds-too-large'],
+    ['91, 0', 'latitude-out-of-range'],
+    ['-90.0001, 0', 'latitude-out-of-range'],
+    [`90°00'01"N 0°00'00"E`, 'latitude-out-of-range'],
+    ['0, 181', 'longitude-out-of-range'],
+    ['0, -180.0001', 'longitude-out-of-range'],
+    [`0°00'00"N 180°00'01"W`, 'longitude-out-of-range'],
+  ])('%s: %s', (raw, problem) => {
+    expect(checkCoordinates(raw)).toEqual({ kind: 'invalid', problem });
+  });
+
+  it.each([
+    ['-91 N, 0', 'sign-contradicts-hemisphere'],
+    ['91, 200', 'latitude-out-of-range'],
+    [`40°60'00"N 200°00'00"E`, 'minutes-or-seconds-too-large'],
+    ['0 N, -200 E', 'sign-contradicts-hemisphere'],
+  ])('reports the first problem in spec order for %s', (raw, problem) => {
+    expect(checkCoordinates(raw)).toEqual({ kind: 'invalid', problem });
+  });
+
+  it('returns the point for valid coordinates', () => {
+    expect(checkCoordinates('48.2, 14')).toEqual({
+      kind: 'valid',
+      point: { lat: 48.2, lon: 14 },
+    });
+  });
+
+  it.each(['3f8jg9f8j', 'KJFK', ''])('%j is not coordinates', (raw) => {
+    expect(checkCoordinates(raw)).toEqual({ kind: 'not-coordinates' });
+  });
 });
 
 describe('resolveLocation with invalid coordinates', () => {

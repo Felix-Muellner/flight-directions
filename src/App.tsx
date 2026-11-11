@@ -10,7 +10,7 @@ import {
   type AirportDatabaseLoader,
   loadAirportDatabase as defaultLoadAirportDatabase,
 } from './airportDatabase.ts';
-import { resolveLocation } from './location.ts';
+import { resolveLocation, type StatusSeverity } from './location.ts';
 import { calculateRoute, formatRoute } from './route.ts';
 
 interface LocationFieldProps {
@@ -19,6 +19,7 @@ interface LocationFieldProps {
   placeholder: string;
   value: string;
   status: string;
+  severity: StatusSeverity;
   onChange: (value: string) => void;
 }
 
@@ -29,14 +30,43 @@ interface AppProps {
 
 const currentDate = () => new Date();
 
+const INPUT_BORDER = {
+  neutral: 'border-[#1E293B]',
+  warning: 'border-[#1E293B]',
+  error: 'border-red-500',
+} as const;
+
+const STATUS_TEXT = {
+  neutral: 'text-slate-400',
+  warning: 'text-amber-400',
+  error: 'text-red-400',
+} as const;
+
 function LocationField({
   id,
   label,
   placeholder,
   value,
   status,
+  severity,
   onChange,
 }: LocationFieldProps) {
+  // The error style waits until the field has been left once, so a
+  // half-typed input does not flash red, and clears as soon as it is fixed.
+  const [hasLeftField, setHasLeftField] = useState(false);
+  useEffect(() => {
+    if (severity !== 'error') setHasLeftField(false);
+  }, [severity]);
+
+  const style =
+    severity === 'error'
+      ? hasLeftField
+        ? 'error'
+        : 'neutral'
+      : severity === 'warning'
+        ? 'warning'
+        : 'neutral';
+
   return (
     <div className="min-w-0">
       <label
@@ -50,15 +80,18 @@ function LocationField({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={() => setHasLeftField(true)}
         aria-describedby={`${id}-status`}
+        aria-invalid={style === 'error' ? true : undefined}
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
-        className="w-full h-11 px-3.5 bg-[#07090E] border border-[#1E293B] rounded text-sm font-mono tabular-nums text-slate-100 placeholder:text-slate-600 focus:outline-none focus-visible:border-sky-400 transition-colors"
+        className={`w-full h-11 px-3.5 bg-[#07090E] border ${INPUT_BORDER[style]} rounded text-sm font-mono tabular-nums text-slate-100 placeholder:text-slate-600 focus:outline-none focus-visible:border-sky-400 transition-colors`}
       />
       <p
         id={`${id}-status`}
-        className="mt-1.5 h-4 leading-4 text-xs font-mono text-slate-400 truncate"
+        data-style={style}
+        className={`mt-1.5 h-4 leading-4 text-xs font-mono ${STATUS_TEXT[style]} truncate`}
         title={status}
       >
         {status}
@@ -141,6 +174,7 @@ export default function App({
             placeholder="KJFK or 40.6413, -73.7781"
             value={originInput}
             status={origin.status}
+            severity={origin.severity}
             onChange={setOriginInput}
           />
 
@@ -163,6 +197,7 @@ export default function App({
             placeholder="EGLL or 51.4706, -0.4619"
             value={destinationInput}
             status={destination.status}
+            severity={destination.severity}
             onChange={setDestinationInput}
           />
         </div>
