@@ -22,27 +22,57 @@ const AIRPORT_DATABASE_URLS = [
   `https://raw.githubusercontent.com/mwgg/Airports/${AIRPORT_DATABASE_COMMIT}/airports.json`,
 ] as const;
 
+const ICAO_PATTERN = /^[A-Za-z0-9]{4}$/;
+const IATA_PATTERN = /^[A-Za-z0-9]{3}$/;
+
+function isInRange(value: unknown, limit: number): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= -limit &&
+    value <= limit
+  );
+}
+
 /**
- * Indexes airports by upper-case ICAO and IATA code.
- * Entries without numeric lat/lon are skipped. ICAO codes take precedence
- * over IATA codes; an IATA code shared by several airports is left out.
+ * Checks one airport database entry against the validation rules in the spec
+ * (codes, coordinate ranges, name).
+ */
+export function isValidAirportEntry(entry: unknown): entry is AirportEntry {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+    return false;
+  }
+  const { icao, iata, name, lat, lon } = entry as Record<string, unknown>;
+  return (
+    typeof icao === 'string' &&
+    ICAO_PATTERN.test(icao) &&
+    (iata === undefined ||
+      iata === '' ||
+      (typeof iata === 'string' && IATA_PATTERN.test(iata))) &&
+    typeof name === 'string' &&
+    isInRange(lat, 90) &&
+    isInRange(lon, 180)
+  );
+}
+
+/**
+ * Indexes valid airports by upper-case ICAO and IATA code; invalid entries
+ * are skipped. ICAO codes take precedence over IATA codes; an IATA code
+ * shared by several airports is left out.
  */
 export function buildAirportDatabase(
-  data: Record<string, AirportEntry>,
+  data: Record<string, unknown>,
 ): AirportDatabase {
-  const entries = Object.values(data).filter(
-    (entry) =>
-      entry && typeof entry.lat === 'number' && typeof entry.lon === 'number',
-  );
+  const entries = Object.values(data).filter(isValidAirportEntry);
 
   const database = new Map<string, AirportEntry>();
   for (const entry of entries) {
-    if (entry.icao) database.set(entry.icao.toUpperCase(), entry);
+    database.set(entry.icao.toUpperCase(), entry);
   }
 
   const byIata = new Map<string, AirportEntry[]>();
   for (const entry of entries) {
-    if (entry.iata?.length !== 3) continue;
+    if (!entry.iata) continue;
     const iata = entry.iata.toUpperCase();
     byIata.set(iata, [...(byIata.get(iata) ?? []), entry]);
   }
@@ -67,8 +97,11 @@ export async function loadAirportDatabase(
     try {
       const response = await fetchFn(url, { signal });
       if (!response.ok) continue;
-      const data: Record<string, AirportEntry> = await response.json();
-      return buildAirportDatabase(data);
+      const data: unknown = await response.json();
+      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+        continue;
+      }
+      return buildAirportDatabase(data as Record<string, unknown>);
     } catch (err) {
       if (signal.aborted) throw err;
     }
