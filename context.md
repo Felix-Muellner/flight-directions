@@ -12,6 +12,8 @@
 | blackout zone | NOAA WMM area near a magnetic pole (H < 2,000 nT) where magnetic variation is unreliable. | polar zone |
 | caution zone | NOAA WMM area near a magnetic pole (2,000 ≤ H < 6,000 nT) where magnetic variation is less reliable. | polar zone |
 | airport database | The airport list from `mwgg/Airports`. | airport index, airport list |
+| bundled snapshot | The airport database copy shipped with the app, fixed to one `mwgg/Airports` commit and verified by SHA-256 at build time. | bundle, baked-in data |
+| live update | The in-browser check for a newer airport database on `mwgg/Airports` `master`, run on start and by the "Check for updates" button. | sync, refresh, auto-update |
 
 The `geomagnetism` library field `decl` keeps its name; our own code uses
 "magnetic variation".
