@@ -1,18 +1,52 @@
 # Flight Directions
 
-> [!WARNING]
-> **Verification Sandbox:** This repository currently contains unverified, AI-generated baseline code (created via Google AI Studio). It is explicitly published in this raw state to serve as a foundational sandbox for my active studies in software verification, CI/CD automation, and agentic workflows. 
+[![CI](https://github.com/Felix-Muellner/flight-directions/actions/workflows/ci.yml/badge.svg)](https://github.com/Felix-Muellner/flight-directions/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 
-## Verification Roadmap (In Progress)
-- [ ] **Sandboxed Environment:** Provision a GitHub Codespace for secure, reproducible execution.
-- [x] **Build & Execution:** Reverse-engineer the generated configuration to successfully compile and run the application outside of the AI Studio preview environment.
-- [ ] **Agentic Unit Testing:** Deploy a terminal-based AI agent to write automated tests (Vitest) mathematically proving the core `geomagnetism` and `turf` routing logic.
-- [x] **CI/CD Pipeline:** Configure GitHub Actions to automatically enforce tests on every commit.
-- [ ] **Production Deployment:** Establish an automated release pipeline to deploy the verified, compiled application to a public cloud provider.
+Magnetic heading and distance calculator for Microsoft Flight Simulator 2024.
+Enter an origin and a destination and get the magnetic heading to set in the
+autopilot `HDG`.
+
+## Features
+
+- **Location input:** ICAO code (`KJFK`), IATA code (`JFK`) or coordinates —
+  decimal (`40.6413, -73.7781`, `40.6413 N 73.7781 W`) or DMS
+  (`40°38'28.7"N 73°46'41.2"W`).
+- **Magnetic heading:** initial great-circle true bearing corrected by the
+  magnetic variation at the origin (World Magnetic Model 2025), shown as
+  `001`–`360`.
+- **Route values:** distance in NM and km, true bearing, magnetic variation.
+- **Safety rules:** invalid coordinates are rejected; no magnetic heading for
+  identical, too-close (< 1 NM) or antipodal points, or in the blackout zone
+  near a magnetic pole; a warning in the caution zone.
+- **Airport database:** [mwgg/Airports](https://github.com/mwgg/Airports),
+  loaded at runtime from a pinned commit, with a fallback source.
+
+Full behaviour: [`docs/spec.md`](docs/spec.md).
+
+## How it was built
+
+This started as an AI-generated prototype (Google AI Studio). I then turned it
+into something I can stand behind:
+
+- **Spec first:** behaviour is written down in [`docs/spec.md`](docs/spec.md),
+  terms in [`context.md`](context.md); every behaviour change has an issue.
+- **Tests first:** magnetic variation is checked against NOAA's official
+  WMM2025 test values, true bearing and distance against independently
+  calculated routes.
+- **CI on every pull request:** lint, typecheck, tests, build, dependency
+  audit and secret scan.
+- **AI agent under written rules:** I work with Claude Code; the rules it
+  follows are in [`CLAUDE.md`](CLAUDE.md).
+
+## Tech stack
+
+React 19 · TypeScript · Vite · Tailwind CSS · Vitest · Biome · GitHub Actions
 
 ## Development
 
-Requires Node.js 22.12+ and npm 10.9+ (enforced on install; pnpm, yarn and Bun are not supported).
+Requires Node.js 22.12+ and npm 10.9+. A dev container is included (GitHub
+Codespaces or VS Code Dev Containers).
 
 ```bash
 npm ci               # install exact dependencies from package-lock.json
@@ -24,17 +58,12 @@ npm run build        # production build to dist/
 npm run secrets      # secret scan (gitleaks, downloaded to .tools/ on first run)
 ```
 
----
+## Status
 
-## Baseline Application Details
+- **Milestone 1 — Harden:** done.
+- **Milestone 2 — Snapshot and deploy:** next (bundled airport database, live
+  demo on GitHub Pages).
 
-> **Note:** The domain-specific aviation mathematics in this application (such as azimuth calculations, great-circle distance, and the World Magnetic Model) were generated entirely by the AI, reinforcing the strict necessity of automated testing to mathematically verify this black-box logic.
+## License
 
-A minimalist magnetic heading and distance calculator designed for Microsoft Flight Simulator 2024 (`MSFS 2024`) aircraft autopilot (`HDG`) systems.
-
-### Features
-- **Flexible Input Formats**: Accepts 4-letter ICAO airport codes (e.g., `KJFK`), 3-letter IATA airport codes (e.g., `JFK`), decimal coordinates (e.g., `40.6413, -73.7781`).
-- **Magnetic Heading (`HDG`)**: Initial great-circle true bearing corrected by the magnetic variation at the origin (World Magnetic Model 2025), shown as three digits (`001`–`360`) for the autopilot `HDG`.
-- **Route Telemetry**: Displays great-circle distance in nautical miles (`NM`) and kilometers (`km`), true bearing (`TRUE`), and magnetic variation at the origin (`VAR`).
-- **Safety Rules**: Invalid coordinates are rejected; no magnetic heading is shown for identical, too-close (< 1 NM) or antipodal points, or in the blackout zone near a magnetic pole. Details: [`docs/spec.md`](docs/spec.md).
-- **Global Airport Lookup**: The prompt included a restriction to not hardcode airports and use free open sources instead. The airport database ([mwgg/Airports](https://github.com/mwgg/Airports)) is fetched at runtime, pinned to a fixed commit.
+[MIT](LICENSE.md)
