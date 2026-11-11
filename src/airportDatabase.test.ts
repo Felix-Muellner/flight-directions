@@ -31,16 +31,22 @@ describe('buildAirportDatabase', () => {
     expect(database.has('BAD')).toBe(false);
   });
 
-  it('gives ICAO lookup precedence over IATA', () => {
-    expect(database.get('XIC')?.name).toBe('Synthetic Three-Character ICAO');
+  // A 3-character ICAO code is invalid (spec: airport database validation),
+  // so XIC is only the IATA code of XIA1.
+  it('skips an entry whose ICAO code is not 4 characters', () => {
+    expect(database.get('XIC')?.name).toBe(
+      'Synthetic IATA Equal To Other ICAO',
+    );
   });
 
-  it('gives ICAO lookup precedence regardless of entry order', () => {
+  it('skips a 3-character ICAO entry regardless of entry order', () => {
     const reversed = buildAirportDatabase({
       XIA1: raw.XIA1,
       XIC: raw.XIC,
     });
-    expect(reversed.get('XIC')?.name).toBe('Synthetic Three-Character ICAO');
+    expect(reversed.get('XIC')?.name).toBe(
+      'Synthetic IATA Equal To Other ICAO',
+    );
   });
 
   it('resolves an IATA code shared by two airports to no airport', () => {
