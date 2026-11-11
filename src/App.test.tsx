@@ -136,6 +136,9 @@ describe('App', () => {
         expect(originInput().getAttribute('aria-invalid')).toBe('true');
         expect(statusElement(originInput()).dataset.style).toBe('error');
         expect(originInput().className).toContain('border-red-500');
+        expect(statusElement(originInput()).className).toContain(
+          'text-red-400',
+        );
       },
     );
 
@@ -250,6 +253,10 @@ describe('App', () => {
       await user.tab();
       expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
       expect(statusElement(originInput()).dataset.style).toBe('warning');
+      expect(statusElement(originInput()).className).toContain(
+        'text-amber-400',
+      );
+      expect(originInput().className).not.toContain('border-red-500');
     });
 
     it('does not mark a valid input after leaving the field', async () => {

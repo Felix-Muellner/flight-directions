@@ -1,9 +1,11 @@
+import geomagnetism from 'geomagnetism';
 import { describe, expect, it } from 'vitest';
 import type { Coordinates } from './coordinates.ts';
 import {
   calculateRoute,
   formatRoute,
   isMagneticModelExpired,
+  poleZoneFor,
 } from './route.ts';
 
 const LINZ: Coordinates = { lat: 48.2, lon: 14.0 };
@@ -58,14 +60,30 @@ describe('route notice precedence: degenerate > blackout > expired > caution', (
     );
   });
 
+  // Pole zones at the expired date, from the same extrapolated model the
+  // route uses, so the precedence tests cannot pass by accident.
+  const poleZoneAt = (point: Coordinates) =>
+    poleZoneFor(
+      geomagnetism
+        .model(EXPIRED, { allowOutOfBoundsModel: true })
+        .point([point.lat, point.lon]).h,
+    );
+  const IN_BLACKOUT: Coordinates = { lat: 86, lon: 140 };
+  const IN_CAUTION: Coordinates = { lat: 75, lon: -100 };
+
+  it('test points lie in the intended pole zones at the expired date', () => {
+    expect(poleZoneAt(IN_BLACKOUT)).toBe('blackout');
+    expect(poleZoneAt(IN_CAUTION)).toBe('caution');
+  });
+
   it('the blackout zone wins over an expired model', () => {
-    const result = calculateRoute({ lat: 86, lon: 140 }, FAR, EXPIRED);
+    const result = calculateRoute(IN_BLACKOUT, FAR, EXPIRED);
     expect(result.notice).toBe('blackout');
     expect(result.magneticHeading).toBeNull();
   });
 
   it('an expired model wins over the caution zone', () => {
-    const result = calculateRoute({ lat: 75, lon: -100 }, FAR, EXPIRED);
+    const result = calculateRoute(IN_CAUTION, FAR, EXPIRED);
     expect(result.notice).toBe('model-expired');
     expect(result.magneticHeading).not.toBeNull();
   });
