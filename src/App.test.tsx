@@ -148,20 +148,54 @@ describe('App', () => {
       expect(originInput().getAttribute('aria-invalid')).toBe('true');
     });
 
-    it('removes the error style as soon as the input becomes valid', async () => {
+    it('removes the error style while the field has focus', async () => {
       const { user } = renderApp();
       await user.type(originInput(), '91, 0');
       await user.tab();
       expect(originInput().getAttribute('aria-invalid')).toBe('true');
 
       await user.click(originInput());
-      await user.clear(originInput());
-      await user.type(originInput(), '48');
+      expect(statusOf(originInput())).toBe(
+        'Latitude must be between 90° S and 90° N',
+      );
       expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
-      await user.type(originInput(), ', 14');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('shows the error style again when the field is left still invalid', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '91, 0');
+      await user.tab();
+      await user.click(originInput());
+      await user.type(originInput(), '0');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('error');
+    });
+
+    it('does not mark input that became valid before leaving the field', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '91, 0');
+      await user.tab();
+      await user.click(originInput());
+      await user.clear(originInput());
+      await user.type(originInput(), '48, 14');
+      await user.tab();
       expect(statusOf(originInput())).toBe('48.0000°, 14.0000°');
       expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
       expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('moves the error style with the input when the fields are swapped', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48, 14');
+      await user.type(destinationInput(), '91, 0');
+      await user.click(
+        screen.getByRole('button', { name: 'Swap origin and destination' }),
+      );
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      expect(destinationInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(destinationInput()).dataset.style).toBe('neutral');
     });
 
     it('removes the error style when the field is emptied', async () => {
@@ -169,6 +203,7 @@ describe('App', () => {
       await user.type(originInput(), '91, 0');
       await user.tab();
       await user.clear(originInput());
+      await user.tab();
       expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
       expect(statusElement(originInput()).dataset.style).toBe('neutral');
     });
