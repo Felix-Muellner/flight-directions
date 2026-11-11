@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App.tsx';
 import {
   type AirportDatabase,
@@ -110,6 +110,22 @@ describe('App', () => {
     const { user } = renderApp();
     await user.type(originInput(), 'hello world');
     expect(statusOf(originInput())).toBe('Enter ICAO, IATA, or lat, lon');
+  });
+
+  it('reads the current date for every route calculation', async () => {
+    const now = vi.fn(() => FIXED_DATE);
+    const user = userEvent.setup();
+    render(<App loadAirportDatabase={loaded} now={now} />);
+    await user.type(originInput(), '48.2, 14');
+    await user.type(destinationInput(), '48.11, 16.5');
+    expect(screen.getByRole('status').textContent).toBe('');
+
+    now.mockReturnValue(new Date('2030-01-01T00:00:00Z'));
+    await user.type(destinationInput(), '7');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Magnetic model expired (WMM2025) – variation may be inaccurate',
+    );
+    expect(magneticHeading()).toMatch(/^\d{3}°$/);
   });
 
   it('shows route values once origin and destination resolve', async () => {

@@ -8,9 +8,23 @@ let cachedModel: { time: number; model: GeomagnetismModel } | null = null;
 function magneticModelAt(date: Date): GeomagnetismModel {
   const time = date.getTime();
   if (cachedModel?.time !== time) {
-    cachedModel = { time, model: geomagnetism.model(date) };
+    // Outside its validity range the library would throw; extrapolating keeps
+    // the values visible, and the route shows the model-expired notice.
+    cachedModel = {
+      time,
+      model: geomagnetism.model(date, { allowOutOfBoundsModel: true }),
+    };
   }
   return cachedModel.model;
+}
+
+/** WMM2025 validity (NOAA): from 2025-01-01 up to, not including, 2030-01-01 (UTC). */
+const MAGNETIC_MODEL_VALID_FROM = Date.UTC(2025, 0, 1);
+const MAGNETIC_MODEL_VALID_UNTIL = Date.UTC(2030, 0, 1);
+
+export function isMagneticModelExpired(date: Date): boolean {
+  const time = date.getTime();
+  return time < MAGNETIC_MODEL_VALID_FROM || time >= MAGNETIC_MODEL_VALID_UNTIL;
 }
 
 /** Below this distance a route has no meaningful direction. */
@@ -26,15 +40,22 @@ const CAUTION_ZONE_MAX_H = 6000;
 /**
  * Why a route shows no true bearing and magnetic heading (degenerate
  * routes), no magnetic heading (blackout zone), or a magnetic heading that
- * needs care (caution zone).
+ * needs care (expired magnetic model, caution zone).
  */
-export type RouteNotice = 'same-point' | 'too-close' | 'antipodal' | PoleZone;
+export type RouteNotice =
+  | 'same-point'
+  | 'too-close'
+  | 'antipodal'
+  | 'model-expired'
+  | PoleZone;
 
 const ROUTE_NOTICE_MESSAGES: Record<RouteNotice, string> = {
   'same-point': 'Origin and destination are the same point',
   'too-close': `Origin and destination too close (< ${MIN_ROUTE_DISTANCE_NM} NM)`,
   antipodal: 'Route direction undefined (antipodal points)',
   blackout: 'Magnetic heading unreliable near magnetic pole',
+  'model-expired':
+    'Magnetic model expired (WMM2025) – variation may be inaccurate',
   caution: 'Near magnetic pole',
 };
 
@@ -126,7 +147,14 @@ export function calculateRoute(
   ]);
   const degenerate = noticeFor(origin, destination, distanceNm);
   const poleZone = poleZoneFor(h);
-  const notice = degenerate ?? poleZone;
+  // Precedence: degenerate route > blackout zone > model expired > caution zone.
+  const notice =
+    degenerate ??
+    (poleZone === 'blackout'
+      ? 'blackout'
+      : isMagneticModelExpired(date)
+        ? 'model-expired'
+        : poleZone);
 
   const trueBearing =
     degenerate === null ? (bearing(originPt, destinationPt) + 360) % 360 : null;

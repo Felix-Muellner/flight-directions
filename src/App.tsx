@@ -76,7 +76,6 @@ export default function App({
   const [airportDatabase, setAirportDatabase] =
     useState<AirportDatabase | null>(null);
   const [hasAirportDatabaseError, setHasAirportDatabaseError] = useState(false);
-  const date = useMemo(() => now(), [now]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -111,8 +110,8 @@ export default function App({
 
   const route = useMemo(() => {
     if (!origin.point || !destination.point) return null;
-    return formatRoute(calculateRoute(origin.point, destination.point, date));
-  }, [origin.point, destination.point, date]);
+    return formatRoute(calculateRoute(origin.point, destination.point, now()));
+  }, [origin.point, destination.point, now]);
 
   const handleSwap = useCallback(() => {
     setOriginInput(destinationInput);
