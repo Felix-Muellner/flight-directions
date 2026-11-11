@@ -85,7 +85,8 @@ function antipodeOf({ lat, lon }: Coordinates): [number, number] {
   return [lon > 0 ? lon - 180 : lon + 180, -lat];
 }
 
-function noticeFor(
+/** The degenerate route notice, if any. Exported so tests can pin the 1 NM boundary exactly. */
+export function noticeFor(
   origin: Coordinates,
   destination: Coordinates,
   distanceNm: number,

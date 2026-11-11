@@ -101,6 +101,42 @@ describe('parseCoordinates: not coordinates', () => {
   );
 });
 
+describe('parseCoordinates: anchors and whitespace', () => {
+  it.each([
+    'abc 48.2, 14.0',
+    '48.2, 14.0 abc',
+    'x48.2, 14.0',
+    '48.2, 14.0x',
+    `abc 40°38'28.7"N 73°46'41.2"W`,
+    `40°38'28.7"N 73°46'41.2"W abc`,
+    `40°38'28.7"N 73°46'41.2"Wx`,
+  ])('rejects extra text around coordinates: %j', (raw) => {
+    expect(parseCoordinates(raw)).toBeNull();
+  });
+
+  it.each(['48.2,\t\t14.0', '48.2 \n 14.0', '48.2     14.0', '48.2 ; 14.0'])(
+    'accepts any whitespace run as a separator: %j',
+    (raw) => {
+      expectPoint(raw, 48.2, 14.0);
+    },
+  );
+
+  it('accepts a whitespace run between DMS latitude and longitude', () => {
+    expectPoint(
+      `40°38'28.7"N   73°46'41.2"W`,
+      40 + 38 / 60 + 28.7 / 3600,
+      -(73 + 46 / 60 + 41.2 / 3600),
+    );
+  });
+
+  it('accepts surrounding whitespace in a location input', () => {
+    expect(resolveLocation('  48.2, 14.0  ', null, false).point).toEqual({
+      lat: 48.2,
+      lon: 14.0,
+    });
+  });
+});
+
 describe('resolveLocation with invalid coordinates', () => {
   it.each(['-40.5 N, 73.7 W', `40°60'00"N 73°46'41"W`, '90.0001, 0'])(
     'shows the input hint for %s',
