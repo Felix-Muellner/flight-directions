@@ -14,7 +14,7 @@ autopilot `HDG`.
   (`40°38'28.7"N 73°46'41.2"W`).
 - **Magnetic heading:** initial great-circle true bearing corrected by the
   magnetic variation at the origin (World Magnetic Model 2025), shown as
-  `001`–`360`.
+  `001`–`360`. Outside 2025–2029 a notice says the model has expired.
 - **Route values:** distance in NM and km, true bearing, magnetic variation.
 - **Safety rules:** invalid coordinates are rejected with a message naming
   the problem; no magnetic heading for identical, too-close (< 1 NM) or

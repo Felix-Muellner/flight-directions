@@ -8,9 +8,23 @@ let cachedModel: { time: number; model: GeomagnetismModel } | null = null;
 function magneticModelAt(date: Date): GeomagnetismModel {
   const time = date.getTime();
   if (cachedModel?.time !== time) {
-    cachedModel = { time, model: geomagnetism.model(date) };
+    // Outside its validity range the library would throw; extrapolating keeps
+    // the values visible, and the route shows the model-expired notice.
+    cachedModel = {
+      time,
+      model: geomagnetism.model(date, { allowOutOfBoundsModel: true }),
+    };
   }
   return cachedModel.model;
+}
+
+/** WMM2025 validity (NOAA): from 2025-01-01 up to, not including, 2030-01-01 (UTC). */
+const MAGNETIC_MODEL_VALID_FROM = Date.UTC(2025, 0, 1);
+const MAGNETIC_MODEL_VALID_UNTIL = Date.UTC(2030, 0, 1);
+
+export function isMagneticModelExpired(date: Date): boolean {
+  const time = date.getTime();
+  return time < MAGNETIC_MODEL_VALID_FROM || time >= MAGNETIC_MODEL_VALID_UNTIL;
 }
 
 /** Below this distance a route has no meaningful direction. */
@@ -26,15 +40,22 @@ const CAUTION_ZONE_MAX_H = 6000;
 /**
  * Why a route shows no true bearing and magnetic heading (degenerate
  * routes), no magnetic heading (blackout zone), or a magnetic heading that
- * needs care (caution zone).
+ * needs care (expired magnetic model, caution zone).
  */
-export type RouteNotice = 'same-point' | 'too-close' | 'antipodal' | PoleZone;
+export type RouteNotice =
+  | 'same-point'
+  | 'too-close'
+  | 'antipodal'
+  | 'model-expired'
+  | PoleZone;
 
 const ROUTE_NOTICE_MESSAGES: Record<RouteNotice, string> = {
   'same-point': 'Origin and destination are the same point',
   'too-close': `Origin and destination too close (< ${MIN_ROUTE_DISTANCE_NM} NM)`,
   antipodal: 'Route direction undefined (antipodal points)',
   blackout: 'Magnetic heading unreliable near magnetic pole',
+  'model-expired':
+    'Magnetic model expired (WMM2025) – variation may be inaccurate',
   caution: 'Near magnetic pole',
 };
 
@@ -85,7 +106,8 @@ function antipodeOf({ lat, lon }: Coordinates): [number, number] {
   return [lon > 0 ? lon - 180 : lon + 180, -lat];
 }
 
-function noticeFor(
+/** The degenerate route notice, if any. Exported so tests can pin the 1 NM boundary exactly. */
+export function noticeFor(
   origin: Coordinates,
   destination: Coordinates,
   distanceNm: number,
@@ -125,7 +147,14 @@ export function calculateRoute(
   ]);
   const degenerate = noticeFor(origin, destination, distanceNm);
   const poleZone = poleZoneFor(h);
-  const notice = degenerate ?? poleZone;
+  // Precedence: degenerate route > blackout zone > model expired > caution zone.
+  const notice =
+    degenerate ??
+    (poleZone === 'blackout'
+      ? 'blackout'
+      : isMagneticModelExpired(date)
+        ? 'model-expired'
+        : poleZone);
 
   const trueBearing =
     degenerate === null ? (bearing(originPt, destinationPt) + 360) % 360 : null;
@@ -143,8 +172,20 @@ export function calculateRoute(
   };
 }
 
+/** One decimal, zero-padded; a bearing that rounds to 0.0 is north, shown as 360.0. */
+function formatTrueBearing(bearing: number): string {
+  const rounded = bearing.toFixed(1);
+  return (rounded === '0.0' ? '360.0' : rounded).padStart(5, '0');
+}
+
+/** `x.x° E` / `x.x° W`; a value that rounds to 0.0 has no direction. */
+function formatMagneticVariation(variation: number): string {
+  const shown = Math.abs(variation).toFixed(1);
+  if (shown === '0.0') return '0.0°';
+  return `${shown}° ${variation > 0 ? 'E' : 'W'}`;
+}
+
 export function formatRoute(route: Route): FormattedRoute {
-  const variation = route.magneticVariation;
   return {
     magneticHeading:
       route.magneticHeading === null
@@ -153,8 +194,8 @@ export function formatRoute(route: Route): FormattedRoute {
     trueBearing:
       route.trueBearing === null
         ? '---.-'
-        : route.trueBearing.toFixed(1).padStart(5, '0'),
-    magneticVariation: `${Math.abs(variation).toFixed(1)}° ${variation >= 0 ? 'E' : 'W'}`,
+        : formatTrueBearing(route.trueBearing),
+    magneticVariation: formatMagneticVariation(route.magneticVariation),
     distanceNm: Math.round(route.distanceNm).toLocaleString('en-US'),
     distanceKm: Math.round(route.distanceKm).toLocaleString('en-US'),
     notice: route.notice ? ROUTE_NOTICE_MESSAGES[route.notice] : '',
