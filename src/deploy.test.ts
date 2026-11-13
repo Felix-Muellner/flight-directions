@@ -125,6 +125,7 @@ describe('deploy workflow', () => {
       'npm run lint',
       'npm run typecheck',
       'npm test',
+      'npm audit --audit-level=high',
       'npm run secrets',
       'npm run build',
       'actions/upload-pages-artifact',
