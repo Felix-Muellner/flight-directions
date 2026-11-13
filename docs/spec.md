@@ -17,8 +17,8 @@ route from an **origin** to a **destination**, plus **true bearing**,
   database**, display edge cases, magnetic model validity, remaining test
   gaps. Done before the app goes public. See
   [Milestone 1.5 requirements](#milestone-15-requirements).
-- **M2 Snapshot and deploy:** **bundled snapshot**, **live update** in the
-  browser, manual deployment to GitHub Pages. See
+- **M2 Snapshot and deploy:** **bundled snapshot**, footer with the data
+  source, manual deployment to GitHub Pages. See
   [Milestone 2 requirements](#milestone-2-requirements).
 
 Later milestones change some earlier rules; where they differ, the later
@@ -202,8 +202,9 @@ the database stays usable:
 
 ### Bundled snapshot
 
-- The repo stores the `mwgg/Airports` commit and the SHA-256 of its
-  `airports.json` side by side.
+- The repo stores the `mwgg/Airports` commit, its commit date and the SHA-256
+  of its `airports.json` side by side. The build reads the commit date from
+  there; it does not ask the GitHub API.
 - The build downloads that file, checks the SHA-256 and **fails** on a
   mismatch, applies the [validation rules](#airport-database-validation), and
   fails if more than 1% of entries are invalid.
@@ -213,35 +214,20 @@ the database stays usable:
 - If the snapshot cannot be loaded, the status is `Airport database offline`
   (including HTTP errors such as 404).
 
-### Live update
+### Updating the airport database
 
-- **When:** automatically on every app start, and when the user presses
-  **Check for updates**.
-- **Source:** the latest `airports.json` on `mwgg/Airports` `master`, from
-  `raw.githubusercontent.com` only.
-- **Checks**, all of which must pass or the whole update is rejected:
-  1. The [validation rules](#airport-database-validation); more than 1% invalid
-     entries rejects the update.
-  2. The number of valid airports is at most 5% lower than in the data in use.
-  3. At most 1% of airports present in both versions move by more than 1 NM.
-- **Result:** an accepted update is stored in IndexedDB with its commit and
-  commit date, and is used immediately. On later starts the newer of the
-  stored update and the bundled snapshot is used.
-- **Failure** of any kind (network, checks, storage) keeps the data in use.
-- **Trust limit:** these checks catch broken, truncated or mass-corrupted
-  files. They do not catch a deliberate change to a single airport upstream;
-  for updates we trust the `mwgg/Airports` maintainers and GitHub. The README
-  says so.
+- The app never checks for or downloads newer airport data in the browser.
+  Every visitor sees the **bundled snapshot** of the current deployment.
+- Newer data reaches users only through a pull request that moves the
+  bundled snapshot to a newer `mwgg/Airports` commit (commit, commit date,
+  SHA-256), followed by a deployment.
 
 ### Footer
 
 - `Airport data: mwgg/Airports (MIT) · YYYY-MM-DD`: the source links to the
   repository, the licence to its licence text, the date is the commit date of
-  the data in use.
-- A **Check for updates** button, disabled while a check runs.
-- Update status after a check: `Checking for updates…`, `Updated just now`
-  (then `Updated n min ago`), `Already up to date`, or
-  `Update failed – keeping current data`.
+  the bundled snapshot.
+- No update button and no update status.
 
 ### Deployment
 
@@ -256,7 +242,11 @@ the database stays usable:
 ### Out of scope for milestone 2
 
 - Deployment to a homelab (its own later milestone).
-- Updates that only use snapshots reviewed in this repository.
+- Any in-browser update of the airport database. The owner removed it: an
+  update in one browser would not reach other visitors, and airport
+  positions rarely change.
+- Automating snapshot updates (e.g. a scheduled workflow that opens a pull
+  request); possible as a later issue.
 
 ## Decisions made without asking
 
@@ -264,7 +254,6 @@ The owner set the priority for data sources (free, legal, open source) and
 left the mechanics to the agent:
 
 - `mwgg/Airports` stays the source; it is MIT-licensed and maintained.
-- The live update takes the latest `master`, not a reviewed snapshot.
-- An accepted update is used immediately, not from the next start.
-- Footer and status wording, the "first problem in table order" rule, and the
-  relative "n min ago" time.
+- Footer and status wording and the "first problem in table order" rule.
+- The bundled snapshot's commit date is stored in the repo next to its commit
+  and SHA-256, not looked up from the GitHub API at build time.
