@@ -94,8 +94,3 @@ export function checkCoordinates(raw: string): CoordinateCheck {
 
   return { kind: 'not-coordinates' };
 }
-
-export function parseCoordinates(raw: string): Coordinates | null {
-  const result = checkCoordinates(raw);
-  return result.kind === 'valid' ? result.point : null;
-}

@@ -3,19 +3,10 @@ import distance from '@turf/distance';
 import geomagnetism, { type GeomagnetismModel } from 'geomagnetism';
 import type { Coordinates } from './coordinates.ts';
 
-let cachedModel: { time: number; model: GeomagnetismModel } | null = null;
-
 function magneticModelAt(date: Date): GeomagnetismModel {
-  const time = date.getTime();
-  if (cachedModel?.time !== time) {
-    // Outside its validity range the library would throw; extrapolating keeps
-    // the values visible, and the route shows the model-expired notice.
-    cachedModel = {
-      time,
-      model: geomagnetism.model(date, { allowOutOfBoundsModel: true }),
-    };
-  }
-  return cachedModel.model;
+  // Outside its validity range the library would throw; extrapolating keeps
+  // the values visible, and the route shows the model-expired notice.
+  return geomagnetism.model(date, { allowOutOfBoundsModel: true });
 }
 
 /** WMM2025 validity (NOAA): from 2025-01-01 up to, not including, 2030-01-01 (UTC). */
@@ -125,6 +116,18 @@ export function noticeFor(
   return null;
 }
 
+/** Precedence: degenerate route > blackout zone > model expired > caution zone. */
+function routeNotice(
+  degenerate: RouteNotice | null,
+  poleZone: PoleZone | null,
+  date: Date,
+): RouteNotice | null {
+  if (degenerate) return degenerate;
+  if (poleZone === 'blackout') return 'blackout';
+  if (isMagneticModelExpired(date)) return 'model-expired';
+  return poleZone;
+}
+
 /**
  * Calculates the route from origin to destination on a spherical earth.
  * `date` selects the point in time for the magnetic model.
@@ -147,14 +150,7 @@ export function calculateRoute(
   ]);
   const degenerate = noticeFor(origin, destination, distanceNm);
   const poleZone = poleZoneFor(h);
-  // Precedence: degenerate route > blackout zone > model expired > caution zone.
-  const notice =
-    degenerate ??
-    (poleZone === 'blackout'
-      ? 'blackout'
-      : isMagneticModelExpired(date)
-        ? 'model-expired'
-        : poleZone);
+  const notice = routeNotice(degenerate, poleZone, date);
 
   const trueBearing =
     degenerate === null ? (bearing(originPt, destinationPt) + 360) % 360 : null;

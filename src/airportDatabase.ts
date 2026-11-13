@@ -9,6 +9,12 @@ export interface AirportEntry {
 /** Airport entries keyed by upper-case ICAO and IATA code. */
 export type AirportDatabase = ReadonlyMap<string, AirportEntry>;
 
+/** Where loading the airport database stands. */
+export type AirportDatabaseState =
+  | { kind: 'loading' }
+  | { kind: 'loaded'; database: AirportDatabase }
+  | { kind: 'failed' };
+
 export type AirportDatabaseLoader = (
   signal: AbortSignal,
 ) => Promise<AirportDatabase>;
@@ -19,8 +25,8 @@ export const BUNDLED_SNAPSHOT_DATE = '2026-10-01';
 /** The bundled snapshot, served from the same site as the app. */
 const BUNDLED_SNAPSHOT_URL = `${import.meta.env.BASE_URL}airports.json`;
 
-const ICAO_PATTERN = /^[A-Za-z0-9]{4}$/;
-const IATA_PATTERN = /^[A-Za-z0-9]{3}$/;
+export const ICAO_PATTERN = /^[A-Za-z0-9]{4}$/;
+export const IATA_PATTERN = /^[A-Za-z0-9]{3}$/;
 
 function isInRange(value: unknown, limit: number): value is number {
   return (

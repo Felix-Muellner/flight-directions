@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { checkCoordinates, parseCoordinates } from './coordinates.ts';
+import { type Coordinates, checkCoordinates } from './coordinates.ts';
 import { resolveLocation } from './location.ts';
+
+/** The point of a valid coordinate input, or null. */
+function parseCoordinates(raw: string): Coordinates | null {
+  const result = checkCoordinates(raw);
+  return result.kind === 'valid' ? result.point : null;
+}
 
 function expectPoint(raw: string, lat: number, lon: number) {
   const point = parseCoordinates(raw);
@@ -169,7 +175,9 @@ describe('parseCoordinates: anchors and whitespace', () => {
   });
 
   it('accepts surrounding whitespace in a location input', () => {
-    expect(resolveLocation('  48.2, 14.0  ', null, false).point).toEqual({
+    expect(
+      resolveLocation('  48.2, 14.0  ', { kind: 'loading' }).point,
+    ).toEqual({
       lat: 48.2,
       lon: 14.0,
     });
@@ -182,7 +190,7 @@ describe('resolveLocation with invalid coordinates', () => {
     [`40°60'00"N 73°46'41"W`, 'Minutes and seconds must be below 60'],
     ['90.0001, 0', 'Latitude must be between 90° S and 90° N'],
   ])('names the problem for %s', (raw, status) => {
-    expect(resolveLocation(raw, null, false)).toEqual({
+    expect(resolveLocation(raw, { kind: 'loading' })).toEqual({
       point: null,
       status,
       severity: 'error',

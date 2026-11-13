@@ -1,13 +1,8 @@
-/**
- * @license
- * SPDX-License-Identifier: MIT
- */
-
 import { ArrowLeftRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  type AirportDatabase,
   type AirportDatabaseLoader,
+  type AirportDatabaseState,
   BUNDLED_SNAPSHOT_DATE,
   loadAirportDatabase as defaultLoadAirportDatabase,
 } from './airportDatabase.ts';
@@ -31,17 +26,19 @@ interface AppProps {
 
 const currentDate = () => new Date();
 
-const INPUT_BORDER = {
-  neutral: 'border-[#1E293B]',
-  warning: 'border-[#1E293B]',
-  error: 'border-red-500',
-} as const;
-
 const STATUS_TEXT = {
   neutral: 'text-slate-400',
   warning: 'text-amber-400',
   error: 'text-red-400',
 } as const;
+
+type FieldStyle = keyof typeof STATUS_TEXT;
+
+function fieldStyleFor(severity: StatusSeverity, focused: boolean): FieldStyle {
+  if (severity === 'error') return focused ? 'neutral' : 'error';
+  if (severity === 'warning') return 'warning';
+  return 'neutral';
+}
 
 function LocationField({
   id,
@@ -57,14 +54,7 @@ function LocationField({
   // current input and focus, so a swap or a late airport database needs no
   // extra handling.
   const [focused, setFocused] = useState(false);
-  const style =
-    severity === 'error'
-      ? focused
-        ? 'neutral'
-        : 'error'
-      : severity === 'warning'
-        ? 'warning'
-        : 'neutral';
+  const style = fieldStyleFor(severity, focused);
 
   return (
     <div className="min-w-0">
@@ -86,7 +76,7 @@ function LocationField({
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
-        className={`w-full h-11 px-3.5 bg-[#07090E] border ${INPUT_BORDER[style]} rounded text-sm font-mono tabular-nums text-slate-100 placeholder:text-slate-600 focus:outline-none focus-visible:border-sky-400 transition-colors`}
+        className={`w-full h-11 px-3.5 bg-canvas border ${style === 'error' ? 'border-red-500' : 'border-line'} rounded text-sm font-mono tabular-nums text-slate-100 placeholder:text-slate-600 focus:outline-none focus-visible:border-sky-400 transition-colors`}
       />
       <p
         id={`${id}-status`}
@@ -106,19 +96,21 @@ export default function App({
 }: AppProps = {}) {
   const [originInput, setOriginInput] = useState('');
   const [destinationInput, setDestinationInput] = useState('');
-  const [airportDatabase, setAirportDatabase] =
-    useState<AirportDatabase | null>(null);
-  const [hasAirportDatabaseError, setHasAirportDatabaseError] = useState(false);
+  const [airportDatabase, setAirportDatabase] = useState<AirportDatabaseState>({
+    kind: 'loading',
+  });
 
   useEffect(() => {
     const controller = new AbortController();
 
     loadAirportDatabase(controller.signal).then(
       (database) => {
-        if (!controller.signal.aborted) setAirportDatabase(database);
+        if (!controller.signal.aborted) {
+          setAirportDatabase({ kind: 'loaded', database });
+        }
       },
       () => {
-        if (!controller.signal.aborted) setHasAirportDatabaseError(true);
+        if (!controller.signal.aborted) setAirportDatabase({ kind: 'failed' });
       },
     );
 
@@ -126,19 +118,13 @@ export default function App({
   }, [loadAirportDatabase]);
 
   const origin = useMemo(
-    () =>
-      resolveLocation(originInput, airportDatabase, hasAirportDatabaseError),
-    [originInput, airportDatabase, hasAirportDatabaseError],
+    () => resolveLocation(originInput, airportDatabase),
+    [originInput, airportDatabase],
   );
 
   const destination = useMemo(
-    () =>
-      resolveLocation(
-        destinationInput,
-        airportDatabase,
-        hasAirportDatabaseError,
-      ),
-    [destinationInput, airportDatabase, hasAirportDatabaseError],
+    () => resolveLocation(destinationInput, airportDatabase),
+    [destinationInput, airportDatabase],
   );
 
   const route = useMemo(() => {
@@ -152,13 +138,13 @@ export default function App({
   }, [originInput, destinationInput]);
 
   return (
-    <div className="min-h-screen bg-[#07090E] text-slate-100 flex flex-col items-center justify-center gap-4 p-6">
+    <div className="min-h-screen bg-canvas text-slate-100 flex flex-col items-center justify-center gap-4 p-6">
       <main className="w-full max-w-xl">
         <section
           aria-label="Magnetic Heading Calculator"
-          className="w-full max-w-xl bg-[#111827] border border-[#1E293B] rounded-lg p-6 sm:p-8"
+          className="w-full max-w-xl bg-[#111827] border border-line rounded-lg p-6 sm:p-8"
         >
-          <header className="mb-6 pb-4 border-b border-[#1E293B] flex items-baseline justify-between gap-4">
+          <header className="mb-6 pb-4 border-b border-line flex items-baseline justify-between gap-4">
             <h1 className="text-lg font-semibold tracking-tight text-slate-100 whitespace-nowrap">
               Flight Directions
             </h1>
@@ -184,7 +170,7 @@ export default function App({
                 onClick={handleSwap}
                 aria-label="Swap origin and destination"
                 title="Swap origin and destination"
-                className="h-11 px-3 bg-[#07090E] border border-[#1E293B] hover:border-slate-600 focus:outline-none focus-visible:border-sky-400 rounded text-slate-300 hover:text-slate-100 transition-colors flex items-center justify-center gap-1.5 text-xs font-mono whitespace-nowrap shrink-0 cursor-pointer"
+                className="h-11 px-3 bg-canvas border border-line hover:border-slate-600 focus:outline-none focus-visible:border-sky-400 rounded text-slate-300 hover:text-slate-100 transition-colors flex items-center justify-center gap-1.5 text-xs font-mono whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <ArrowLeftRight className="w-4 h-4" />
                 <span className="sm:hidden">Swap</span>
@@ -202,7 +188,7 @@ export default function App({
             />
           </div>
 
-          <div className="pt-6 border-t border-[#1E293B] flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="pt-6 border-t border-line flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
               <div className="text-xs font-mono text-slate-400 mb-1 whitespace-nowrap">
                 MAGNETIC HEADING (HDG)

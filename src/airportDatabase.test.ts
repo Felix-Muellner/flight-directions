@@ -13,7 +13,8 @@ import { resolveLocation } from './location.ts';
 const raw = fixture as unknown as Record<string, AirportEntry>;
 const database = buildAirportDatabase(raw);
 
-const resolve = (input: string) => resolveLocation(input, database, false);
+const resolve = (input: string) =>
+  resolveLocation(input, { kind: 'loaded', database });
 
 describe('buildAirportDatabase', () => {
   it('finds airports by ICAO and IATA code', () => {

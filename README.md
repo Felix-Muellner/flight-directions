@@ -24,6 +24,8 @@ autopilot `HDG`.
   [mwgg/Airports](https://github.com/mwgg/Airports), stored unchanged in
   [`data/airports.json`](data/airports.json) and shipped with the app; no
   external download at runtime.
+- **Privacy:** the site loads nothing from third-party hosts; the fonts are
+  bundled with it.
 
 Full behaviour: [`docs/spec.md`](docs/spec.md).
 
@@ -47,7 +49,7 @@ React 19 · TypeScript · Vite · Tailwind CSS · Vitest · Biome · GitHub Acti
 
 ## Development
 
-Requires Node.js 22.12+ and npm 10.9+. A dev container is included (GitHub
+Requires Node.js 26 (22.22.2+ and 24.15+ also work) and npm 10.9+. A dev container is included (GitHub
 Codespaces or VS Code Dev Containers).
 
 ```bash
@@ -64,8 +66,8 @@ npm run secrets      # secret scan (gitleaks, downloaded to .tools/ and checked 
 
 The site is published to GitHub Pages by the
 [Deploy workflow](.github/workflows/deploy.yml). It runs only when started by
-hand and only on `main`. It runs lint, typecheck, tests and the secret scan,
-builds the site, and deploys only if all of them pass.
+hand and only on `main`. It runs lint, typecheck, tests, the dependency audit
+and the secret scan, builds the site, and deploys only if all of them pass.
 
 1. One-time setup by the repository owner: **Settings → Pages → Source:
    GitHub Actions**.
@@ -77,6 +79,10 @@ To check a build under the Pages base path locally:
 BASE_PATH=/flight-directions/ npm run build
 ```
 
+The workflows pin every GitHub Action to a commit SHA, with the version in a
+comment. Dependabot opens a pull request when an Action has a new release;
+check its release notes, then merge it like any other change.
+
 ## Status
 
 - **Milestone 1 — Harden:** done.
@@ -84,6 +90,8 @@ BASE_PATH=/flight-directions/ npm run build
   database, display edge cases).
 - **Milestone 2 — Snapshot and deploy:** in progress (bundled airport
   database, live demo on GitHub Pages).
+- **Milestone 2.5 — Audit follow-up:** in progress (see
+  [`docs/audit-2026-11.md`](docs/audit-2026-11.md)).
 
 ## License
 
@@ -94,3 +102,9 @@ BASE_PATH=/flight-directions/ npm run build
 The airport data comes from [mwgg/Airports](https://github.com/mwgg/Airports)
 under the MIT licence: [`data/LICENSE-mwgg-Airports`](data/LICENSE-mwgg-Airports).
 Per mwgg/Airports, its time zones were initially sourced from TimeZoneDB and updated using TimeAPI.
+
+### Fonts
+
+JetBrains Mono and Plus Jakarta Sans are bundled from the
+[Fontsource](https://fontsource.org) packages under the SIL Open Font License
+1.1.

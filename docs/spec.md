@@ -20,6 +20,9 @@ route from an **origin** to a **destination**, plus **true bearing**,
 - **M2 Snapshot and deploy:** **bundled snapshot**, footer with the data
   source, manual deployment to GitHub Pages. See
   [Milestone 2 requirements](#milestone-2-requirements).
+- **M2.5 Audit follow-up:** no third-party requests, hardened CI, code
+  cleanups from the [November 2026 audit](audit-2026-11.md). See
+  [Milestone 2.5 requirements](#milestone-25-requirements).
 
 Later milestones change some earlier rules; where they differ, the later
 milestone wins.
@@ -259,6 +262,47 @@ permission notice are included with every copy.
 ### Out of scope for milestone 2
 
 - Deployment to a homelab (its own later milestone).
+
+## Milestone 2.5 requirements
+
+From the [November 2026 audit](audit-2026-11.md). Apart from the fonts'
+source, nothing the user sees changes.
+
+### Fonts
+
+- The site makes no requests to third-party hosts; the fonts are served
+  from the same site, under the base path.
+- The fonts stay JetBrains Mono (400, 600, 700) and Plus Jakarta Sans (400,
+  600), bundled from the Fontsource packages.
+
+### CI
+
+- Every GitHub Action in the CI and deploy workflows is pinned to a full
+  commit SHA of its latest release, with its version in a comment. Pinned
+  releases run on the Node 24 Actions runtime (Node 20 was removed from
+  GitHub's runners on 2026-09-23).
+- Dependabot proposes updates for those Actions.
+- The deploy workflow runs `npm audit --audit-level=high` before building,
+  as CI does.
+
+### Code health
+
+Refactors with no change in behaviour:
+
+- No unused magnetic model cache, no exports used only by tests, one
+  pattern each for ICAO and IATA codes.
+- The route notice keeps its precedence: degenerate route > blackout zone >
+  model expired > caution zone.
+- The app holds the airport database state as one value (loading, loaded,
+  failed); colours used repeatedly are named theme colours.
+
+### Dependencies
+
+- Every dependency is on its latest release, including the major updates
+  of vitest (5), jsdom (31) and lucide-react (1.x).
+- CI, the deploy workflow and the dev container run Node.js 26, the active
+  LTS line. `engines` also accepts Node 22.22.2+ and 24.15+, the oldest
+  versions jsdom 31 supports.
 
 ## Decisions made without asking
 
