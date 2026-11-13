@@ -226,15 +226,15 @@ growth of the Git history stays small.
 
 - The app never checks for or downloads newer airport data in the browser.
   Every visitor sees the **bundled snapshot** of the current deployment.
-- An update script, run by hand with an `mwgg/Airports` commit, downloads
-  that commit's `airports.json` from GitHub, computes its SHA-256, applies
-  the [validation rules](#airport-database-validation), **fails** if more
-  than 1% of entries are invalid, and rewrites the three files in `data/`.
-  For the commit that is already recorded it **fails** if the SHA-256 differs
-  from the recorded one.
-- Newer data reaches users only through a pull request with the script's
-  output, followed by a deployment.
-- Tests of the script never use the network.
+- There is no update script. The owner removed it for simplicity: as long as
+  the data is not updated, it is not needed.
+- The first bundled snapshot is made once by hand: download the original
+  `airports.json` of the recorded commit, record its SHA-256, apply the
+  [validation rules](#airport-database-validation) (at most 1% of entries may
+  be invalid), and keep only the five fields. The pull request that adds it
+  lists the exact commands that were run.
+- A later update is a new issue that repeats those steps for a newer commit,
+  followed by a deployment.
 
 ### Licence of the airport data
 
@@ -242,8 +242,8 @@ growth of the Git history stays small.
 redistributing the data on one condition: its copyright notice and
 permission notice are included with every copy.
 
-- `data/LICENSE-mwgg-Airports` holds that licence text unchanged; the update
-  script copies it from the same commit.
+- `data/LICENSE-mwgg-Airports` holds that licence text unchanged, taken from
+  the same commit as the data.
 - The deployed site includes the same file next to the bundled snapshot.
 - The README names `mwgg/Airports` as the source of the airport data and
   links its licence.
@@ -286,4 +286,4 @@ left the mechanics to the agent:
 - Footer and status wording and the "first problem in table order" rule.
 - The bundled snapshot's commit date is stored in the repo next to its commit
   and SHA-256, not looked up from the GitHub API.
-- The file names in `data/`, and that the update script is run by hand.
+- The file names in `data/`.
