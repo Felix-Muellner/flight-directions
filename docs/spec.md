@@ -202,32 +202,49 @@ the database stays usable:
 
 ### Bundled snapshot
 
-- The repo stores the `mwgg/Airports` commit, its commit date and the SHA-256
-  of its `airports.json` side by side. The build reads the commit date from
-  there; it does not ask the GitHub API.
-- The build downloads that file, checks the SHA-256 and **fails** on a
-  mismatch, applies the [validation rules](#airport-database-validation), and
-  fails if more than 1% of entries are invalid.
-- It keeps only `icao`, `iata`, `name`, `lat`, `lon` and ships the result as a
-  separate static asset served from the same site. The app no longer fetches
-  the airport database from jsDelivr.
+The owner decided to store the bundled snapshot in the repo, unchanged,
+instead of downloading it on every build: builds need no network, the
+shipped data is visible in the repo, all fields stay available for later
+features, and airport positions change rarely enough that the growth of the
+Git history stays small.
+
+- The repo stores, in `data/`:
+  - `airports.json`: the bundled snapshot, the original `airports.json` of
+    `mwgg/Airports` commit `a89e4e0dda9d9878337e2da190ebe1ef1d6af705`, byte
+    for byte.
+  - `LICENSE-mwgg-Airports`: the `mwgg/Airports` licence from the same
+    commit, unchanged (see
+    [Licence of the airport data](#licence-of-the-airport-data)).
+- The code keeps the commit date of that commit as a constant for the
+  footer. It does not keep the commit itself, which only this spec records.
+- The build ships `airports.json` unchanged as a separate static asset served
+  from the same site. It downloads nothing.
+- The app applies the validation rules in the browser and skips invalid
+  entries, as before.
+- The app no longer fetches the airport database from jsDelivr or GitHub.
 - If the snapshot cannot be loaded, the status is `Airport database offline`
   (including HTTP errors such as 404).
+- A later data update is its own issue.
 
-### Updating the airport database
+### Licence of the airport data
 
-- The app never checks for or downloads newer airport data in the browser.
-  Every visitor sees the **bundled snapshot** of the current deployment.
-- Newer data reaches users only through a pull request that moves the
-  bundled snapshot to a newer `mwgg/Airports` commit (commit, commit date,
-  SHA-256), followed by a deployment.
+`mwgg/Airports` is under the MIT licence, which allows copying and
+redistributing the data on one condition: its copyright notice and
+permission notice are included with every copy.
+
+- `data/LICENSE-mwgg-Airports` holds that licence text unchanged.
+- The deployed site includes the same file next to the bundled snapshot.
+- The README names `mwgg/Airports` as the source of the airport data and
+  links its licence. It also repeats the source's own credit for the time
+  zones in the file, worded so it is clearly the source's credit, not ours:
+  `Per mwgg/Airports, its time zones were initially sourced from TimeZoneDB
+  and updated using TimeAPI.`
 
 ### Footer
 
 - `Airport data: mwgg/Airports (MIT) · YYYY-MM-DD`: the source links to the
-  repository, the licence to its licence text, the date is the commit date of
-  the bundled snapshot.
-- No update button and no update status.
+  repository, the licence to the licence file shipped with the site, the
+  date is the commit date of the bundled snapshot.
 
 ### Deployment
 
@@ -242,11 +259,6 @@ the database stays usable:
 ### Out of scope for milestone 2
 
 - Deployment to a homelab (its own later milestone).
-- Any in-browser update of the airport database. The owner removed it: an
-  update in one browser would not reach other visitors, and airport
-  positions rarely change.
-- Automating snapshot updates (e.g. a scheduled workflow that opens a pull
-  request); possible as a later issue.
 
 ## Decisions made without asking
 
@@ -255,5 +267,8 @@ left the mechanics to the agent:
 
 - `mwgg/Airports` stays the source; it is MIT-licensed and maintained.
 - Footer and status wording and the "first problem in table order" rule.
-- The bundled snapshot's commit date is stored in the repo next to its commit
-  and SHA-256, not looked up from the GitHub API at build time.
+- The bundled snapshot's commit date is a constant in the code, not looked
+  up from the GitHub API.
+- The file names in `data/`.
+- The README repeats the source's credit for the time zones (TimeZoneDB and
+  TimeAPI), because the shipped file contains them.
