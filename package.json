@@ -22,6 +22,8 @@
     "secrets": "bash scripts/gitleaks.sh"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@turf/bearing": "^7.4.0",
     "@turf/distance": "^7.4.0",
     "geomagnetism": "^0.2.0",

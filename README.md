@@ -24,6 +24,8 @@ autopilot `HDG`.
   [mwgg/Airports](https://github.com/mwgg/Airports), stored unchanged in
   [`data/airports.json`](data/airports.json) and shipped with the app; no
   external download at runtime.
+- **Privacy:** the site loads nothing from third-party hosts; the fonts are
+  bundled with it.
 
 Full behaviour: [`docs/spec.md`](docs/spec.md).
 
@@ -84,6 +86,8 @@ BASE_PATH=/flight-directions/ npm run build
   database, display edge cases).
 - **Milestone 2 — Snapshot and deploy:** in progress (bundled airport
   database, live demo on GitHub Pages).
+- **Milestone 2.5 — Audit follow-up:** in progress (see
+  [`docs/audit-2026-11.md`](docs/audit-2026-11.md)).
 
 ## License
 
@@ -94,3 +98,9 @@ BASE_PATH=/flight-directions/ npm run build
 The airport data comes from [mwgg/Airports](https://github.com/mwgg/Airports)
 under the MIT licence: [`data/LICENSE-mwgg-Airports`](data/LICENSE-mwgg-Airports).
 Per mwgg/Airports, its time zones were initially sourced from TimeZoneDB and updated using TimeAPI.
+
+### Fonts
+
+JetBrains Mono and Plus Jakarta Sans are bundled from the
+[Fontsource](https://fontsource.org) packages under the SIL Open Font License
+1.1.

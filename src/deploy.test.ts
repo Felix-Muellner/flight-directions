@@ -35,6 +35,54 @@ describe('build under the GitHub Pages base path', () => {
     for (const url of local) expect(url.startsWith(PAGES_BASE)).toBe(true);
   });
 
+  const stylesheets = () => {
+    const assets = join(outDir, 'assets');
+    return readdirSync(assets)
+      .filter((name) => name.endsWith('.css'))
+      .map((name) => readFileSync(join(assets, name), 'utf8'))
+      .join('\n');
+  };
+
+  it('loads no resources from third-party hosts', () => {
+    const html = readFileSync(join(outDir, 'index.html'), 'utf8');
+    const htmlUrls = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map(
+      (match) => match[1],
+    );
+    const cssUrls = [...stylesheets().matchAll(/url\(([^)]+)\)/g)].map(
+      (match) => match[1].replace(/^["']|["']$/g, ''),
+    );
+    expect(htmlUrls.length).toBeGreaterThan(0);
+    for (const url of [...htmlUrls, ...cssUrls]) {
+      expect(url, url).not.toMatch(/^(?:https?:)?\/\//);
+    }
+  });
+
+  it.each([
+    ['JetBrains Mono', 400],
+    ['JetBrains Mono', 600],
+    ['JetBrains Mono', 700],
+    ['Plus Jakarta Sans', 400],
+    ['Plus Jakarta Sans', 600],
+  ])('bundles %s %i under the base path', (family, weight) => {
+    const faces = [...stylesheets().matchAll(/@font-face\{([^}]*)\}/g)]
+      .map((match) => match[1])
+      .filter(
+        (face) =>
+          face.includes(`font-family:${family}`) &&
+          face.includes(`font-weight:${weight}`),
+      );
+    expect(faces.length).toBeGreaterThan(0);
+    for (const face of faces) {
+      for (const [, url] of face.matchAll(/url\(([^)]+)\)/g)) {
+        // Vite inlines small files; those come from the site itself.
+        if (url.startsWith('data:font/')) continue;
+        expect(url.startsWith(`${PAGES_BASE}assets/`), url).toBe(true);
+        const file = url.slice(PAGES_BASE.length);
+        expect(existsSync(join(outDir, file)), file).toBe(true);
+      }
+    }
+  });
+
   it('loads the bundled snapshot and links the licence under the base path', () => {
     const assets = join(outDir, 'assets');
     const scripts = readdirSync(assets)
