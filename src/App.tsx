@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   type AirportDatabase,
   type AirportDatabaseLoader,
+  BUNDLED_SNAPSHOT_DATE,
   loadAirportDatabase as defaultLoadAirportDatabase,
 } from './airportDatabase.ts';
 import { resolveLocation, type StatusSeverity } from './location.ts';
@@ -237,6 +238,24 @@ export default function App({
         >
           {route?.notice}
         </p>
+
+        <footer className="mt-6 pt-4 border-t border-[#1E293B] text-xs font-mono text-slate-500">
+          Airport data:{' '}
+          <a
+            href="https://github.com/mwgg/Airports"
+            className="underline hover:text-slate-300"
+          >
+            mwgg/Airports
+          </a>{' '}
+          (
+          <a
+            href={`${import.meta.env.BASE_URL}LICENSE-mwgg-Airports`}
+            className="underline hover:text-slate-300"
+          >
+            MIT
+          </a>
+          ) <span className="whitespace-nowrap">· {BUNDLED_SNAPSHOT_DATE}</span>
+        </footer>
       </section>
     </main>
   );
