@@ -1,10 +1,25 @@
 import type { AirportDatabase } from './airportDatabase.ts';
-import { type Coordinates, parseCoordinates } from './coordinates.ts';
+import {
+  type CoordinateProblem,
+  type Coordinates,
+  checkCoordinates,
+} from './coordinates.ts';
+
+/** How the status line is styled: an input error, a warning, or neither. */
+export type StatusSeverity = 'none' | 'warning' | 'error';
 
 export interface ResolvedLocation {
   point: Coordinates | null;
   status: string;
+  severity: StatusSeverity;
 }
+
+const COORDINATE_PROBLEM_MESSAGES: Record<CoordinateProblem, string> = {
+  'sign-contradicts-hemisphere': 'Sign contradicts hemisphere letter',
+  'minutes-or-seconds-too-large': 'Minutes and seconds must be below 60',
+  'latitude-out-of-range': 'Latitude must be between 90° S and 90° N',
+  'longitude-out-of-range': 'Longitude must be between 180° W and 180° E',
+};
 
 const AIRPORT_CODE_REGEX = /^[A-Z0-9]{3,4}$/;
 
@@ -15,25 +30,39 @@ export function resolveLocation(
   hasAirportDatabaseError: boolean,
 ): ResolvedLocation {
   const trimmed = raw.trim();
-  if (!trimmed) return { point: null, status: '' };
+  if (!trimmed) return { point: null, status: '', severity: 'none' };
 
-  const coords = parseCoordinates(trimmed);
-  if (coords) {
+  const coordinates = checkCoordinates(trimmed);
+  if (coordinates.kind === 'valid') {
+    const { lat, lon } = coordinates.point;
     return {
-      point: coords,
-      status: `${coords.lat.toFixed(4)}°, ${coords.lon.toFixed(4)}°`,
+      point: coordinates.point,
+      status: `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`,
+      severity: 'none',
+    };
+  }
+  if (coordinates.kind === 'invalid') {
+    return {
+      point: null,
+      status: COORDINATE_PROBLEM_MESSAGES[coordinates.problem],
+      severity: 'error',
     };
   }
 
   const code = trimmed.toUpperCase();
   if (AIRPORT_CODE_REGEX.test(code)) {
     if (!airportDatabase) {
-      return {
-        point: null,
-        status: hasAirportDatabaseError
-          ? 'Airport database offline'
-          : 'Loading airport database...',
-      };
+      return hasAirportDatabaseError
+        ? {
+            point: null,
+            status: 'Airport database offline',
+            severity: 'warning',
+          }
+        : {
+            point: null,
+            status: 'Loading airport database...',
+            severity: 'none',
+          };
     }
 
     const airport = airportDatabase.get(code);
@@ -44,11 +73,16 @@ export function resolveLocation(
       return {
         point: { lat: airport.lat, lon: airport.lon },
         status: `${codeDisplay} · ${airport.name}`,
+        severity: 'none',
       };
     }
 
-    return { point: null, status: 'Airport code not found' };
+    return { point: null, status: 'Airport code not found', severity: 'error' };
   }
 
-  return { point: null, status: 'Enter ICAO, IATA, or lat, lon' };
+  return {
+    point: null,
+    status: 'Enter ICAO, IATA, or lat, lon',
+    severity: 'error',
+  };
 }

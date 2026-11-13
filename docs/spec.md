@@ -158,9 +158,10 @@ status table for the rows below; the other rows are unchanged.
 - If several problems apply, the first in table order is shown.
 - **Error style:** red field border, red status text, `aria-invalid="true"`.
   **Warning style:** neutral warning colour, no `aria-invalid`.
-- The status text updates live while typing. The error style appears only
-  after the field loses focus, and disappears as soon as the input becomes
-  valid or empty.
+- The status text updates live while typing. The error style shows only
+  while the field is not focused and its input has an error: it appears when
+  the field loses focus (or when an error arrives later, e.g. after a swap or
+  a late airport database) and disappears when the field gets focus again.
 
 ### Airport database validation
 

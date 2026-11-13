@@ -3,6 +3,7 @@ import {
   AIRPORT_DATABASE_COMMIT,
   type AirportEntry,
   buildAirportDatabase,
+  isValidAirportEntry,
   loadAirportDatabase,
 } from './airportDatabase.ts';
 import fixture from './fixtures/airports.json';
@@ -31,16 +32,22 @@ describe('buildAirportDatabase', () => {
     expect(database.has('BAD')).toBe(false);
   });
 
-  it('gives ICAO lookup precedence over IATA', () => {
-    expect(database.get('XIC')?.name).toBe('Synthetic Three-Character ICAO');
+  // A 3-character ICAO code is invalid (spec: airport database validation),
+  // so XIC is only the IATA code of XIA1.
+  it('skips an entry whose ICAO code is not 4 characters', () => {
+    expect(database.get('XIC')?.name).toBe(
+      'Synthetic IATA Equal To Other ICAO',
+    );
   });
 
-  it('gives ICAO lookup precedence regardless of entry order', () => {
+  it('skips a 3-character ICAO entry regardless of entry order', () => {
     const reversed = buildAirportDatabase({
       XIA1: raw.XIA1,
       XIC: raw.XIC,
     });
-    expect(reversed.get('XIC')?.name).toBe('Synthetic Three-Character ICAO');
+    expect(reversed.get('XIC')?.name).toBe(
+      'Synthetic IATA Equal To Other ICAO',
+    );
   });
 
   it('resolves an IATA code shared by two airports to no airport', () => {
@@ -52,6 +59,73 @@ describe('buildAirportDatabase', () => {
   it('stores codes upper-case', () => {
     expect(database.get('XLOW')?.name).toBe('Synthetic Lower-Case Codes');
     expect(database.get('LWR')?.name).toBe('Synthetic Lower-Case Codes');
+  });
+});
+
+describe('airport entry validation', () => {
+  const valid = {
+    icao: 'ZZZZ',
+    iata: 'ZZZ',
+    name: 'Synthetic Valid',
+    lat: 10,
+    lon: 20,
+  };
+
+  it('accepts a valid entry', () => {
+    expect(isValidAirportEntry(valid)).toBe(true);
+  });
+
+  it.each([
+    ['empty iata', { ...valid, iata: '' }],
+    ['missing iata', { ...valid, iata: undefined }],
+    ['lower-case codes', { ...valid, icao: 'zzzz', iata: 'zzz' }],
+    ['digits in codes', { ...valid, icao: 'K1A2', iata: '1A2' }],
+    ['boundary coordinates', { ...valid, lat: -90, lon: 180 }],
+    ['other boundary coordinates', { ...valid, lat: 90, lon: -180 }],
+  ])('accepts %s', (_, entry) => {
+    expect(isValidAirportEntry(entry)).toBe(true);
+  });
+
+  it.each([
+    ['null', null],
+    ['a string', 'KJFK'],
+    ['an array', [valid]],
+    ['non-string icao', { ...valid, icao: 1234 }],
+    ['missing icao', { ...valid, icao: undefined }],
+    ['3-character icao', { ...valid, icao: 'ZZZ' }],
+    ['5-character icao', { ...valid, icao: 'ZZZZZ' }],
+    ['icao with underscore', { ...valid, icao: 'EK_2' }],
+    ['non-string iata', { ...valid, iata: 123 }],
+    ['2-character iata', { ...valid, iata: 'ZZ' }],
+    ['4-character iata', { ...valid, iata: 'ZZZZ' }],
+    ['iata with symbol', { ...valid, iata: 'Z-Z' }],
+    ['only lat', { ...valid, lon: undefined }],
+    ['only lon', { ...valid, lat: undefined }],
+    ['string lat', { ...valid, lat: '10' }],
+    ['NaN lon', { ...valid, lon: Number.NaN }],
+    ['lat above 90', { ...valid, lat: 90.0001 }],
+    ['lat below -90', { ...valid, lat: -90.0001 }],
+    ['lon above 180', { ...valid, lon: 180.0001 }],
+    ['lon below -180', { ...valid, lon: -180.0001 }],
+    ['non-string name', { ...valid, name: 42 }],
+    ['missing name', { ...valid, name: undefined }],
+  ])('rejects %s', (_, entry) => {
+    expect(isValidAirportEntry(entry)).toBe(false);
+  });
+
+  it('keeps the rest of the database usable when entries are malformed', () => {
+    const mixed = buildAirportDatabase({
+      KJFK: raw.KJFK,
+      NUM1: { ...valid, icao: 1234 },
+      NUM2: { ...valid, icao: 'ZZZY', iata: 99 },
+      NUL: null,
+      RNG: { ...valid, icao: 'ZZZX', iata: 'ZZX', lat: 91 },
+      BADI: { ...valid, icao: 'ZZZW', iata: 'ZW' },
+    });
+    expect(mixed.get('KJFK')?.name).toBe(
+      'John F Kennedy International Airport',
+    );
+    expect([...mixed.keys()].sort()).toEqual(['JFK', 'KJFK']);
   });
 });
 
@@ -69,6 +143,7 @@ describe('resolveLocation with the airport database', () => {
     expect(resolve('EDAB')).toEqual({
       point: { lat: 51.193611145, lon: 14.5197219849 },
       status: 'EDAB · Bautzen Airport',
+      severity: 'none',
     });
   });
 
@@ -76,6 +151,7 @@ describe('resolveLocation with the airport database', () => {
     expect(resolve('DUP')).toEqual({
       point: null,
       status: 'Airport code not found',
+      severity: 'error',
     });
   });
 });
@@ -122,6 +198,16 @@ describe('loadAirportDatabase', () => {
       .mockRejectedValueOnce(new TypeError('network'))
       .mockResolvedValueOnce(jsonResponse(raw));
     await expect(loadAirportDatabase(signal, fetchFn)).resolves.toBeDefined();
+  });
+
+  it('falls back when the first source returns JSON that is not an object', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse([raw.KJFK]))
+      .mockResolvedValueOnce(jsonResponse(raw));
+    const loaded = await loadAirportDatabase(signal, fetchFn);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(loaded.get('KJFK')?.icao).toBe('KJFK');
   });
 
   it('rejects when every source fails', async () => {

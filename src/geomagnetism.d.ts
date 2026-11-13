@@ -13,7 +13,12 @@ declare module 'geomagnetism' {
     point(coords: [latitude: number, longitude: number]): GeomagnetismPoint;
   }
 
-  export function model(date?: Date): GeomagnetismModel;
+  export interface ModelOptions {
+    /** Extrapolate with the latest model instead of throwing outside its validity range. */
+    allowOutOfBoundsModel?: boolean;
+  }
+
+  export function model(date?: Date, options?: ModelOptions): GeomagnetismModel;
 
   const geomagnetism: {
     model: typeof model;

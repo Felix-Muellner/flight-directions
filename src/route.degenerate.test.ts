@@ -4,15 +4,14 @@ import {
   calculateRoute,
   formatRoute,
   MIN_ROUTE_DISTANCE_NM,
+  noticeFor,
   type Route,
 } from './route.ts';
 
 const DATE = new Date('2026-06-01T00:00:00Z');
 
 function route(origin: Coordinates, destination: Coordinates): Route {
-  const result = calculateRoute(origin, destination, DATE);
-  if (!result) throw new Error('expected a route');
-  return result;
+  return calculateRoute(origin, destination, DATE);
 }
 
 const EARTH_RADIUS_NM = 6371.0088 / 1.852;
@@ -63,6 +62,19 @@ describe('degenerate routes', () => {
     expect(result.trueBearing).toBeNull();
     expect(result.magneticHeading).toBeNull();
     expect(result.distanceNm).toBeCloseTo(nm, 3);
+  });
+
+  // A distance of exactly 1.0 never comes out of real coordinates (floating
+  // point jumps from 0.9999999999999999 to 1.0000000000000002), so the
+  // boundary is pinned on the notice check itself.
+  it('a distance of exactly 1.00 NM is a normal route', () => {
+    expect(noticeFor(ORIGIN, { lat: 0, lon: 0 }, 1)).toBeNull();
+  });
+
+  it('a distance just below 1.00 NM is too close', () => {
+    expect(noticeFor(ORIGIN, { lat: 0, lon: 0 }, 0.9999999999999999)).toBe(
+      'too-close',
+    );
   });
 
   it('1.01 NM apart is a normal route', () => {

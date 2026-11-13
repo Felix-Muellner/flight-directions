@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App.tsx';
 import {
   type AirportDatabase,
@@ -110,6 +110,211 @@ describe('App', () => {
     const { user } = renderApp();
     await user.type(originInput(), 'hello world');
     expect(statusOf(originInput())).toBe('Enter ICAO, IATA, or lat, lon');
+  });
+
+  describe('invalid location input', () => {
+    const statusElement = (input: HTMLInputElement) =>
+      document.getElementById(
+        input.getAttribute('aria-describedby') ?? '',
+      ) as HTMLElement;
+
+    it.each([
+      ['-48.2 N, 14.0', 'Sign contradicts hemisphere letter'],
+      [`48°61'00"N 14°00'00"E`, 'Minutes and seconds must be below 60'],
+      ['91, 0', 'Latitude must be between 90° S and 90° N'],
+      ['3f8jg9f8j', 'Enter ICAO, IATA, or lat, lon'],
+    ])(
+      'names the problem for %s and marks it after leaving the field',
+      async (raw, message) => {
+        const { user } = renderApp();
+        await user.type(originInput(), raw);
+        expect(statusOf(originInput())).toBe(message);
+        expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+        expect(statusElement(originInput()).dataset.style).toBe('neutral');
+
+        await user.tab();
+        expect(originInput().getAttribute('aria-invalid')).toBe('true');
+        expect(statusElement(originInput()).dataset.style).toBe('error');
+        expect(originInput().className).toContain('border-red-500');
+        expect(statusElement(originInput()).className).toContain(
+          'text-red-400',
+        );
+      },
+    );
+
+    it('shows not found as an error after leaving the field', async () => {
+      const { user } = renderApp();
+      await screen.findByLabelText('ORIGIN');
+      await user.type(originInput(), 'ZZZZ');
+      await screen.findByText('Airport code not found');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('removes the error style while the field has focus', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '91, 0');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+
+      await user.click(originInput());
+      expect(statusOf(originInput())).toBe(
+        'Latitude must be between 90° S and 90° N',
+      );
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('shows the error style again when the field is left still invalid', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '91, 0');
+      await user.tab();
+      await user.click(originInput());
+      await user.type(originInput(), '0');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('error');
+    });
+
+    it('does not mark input that became valid before leaving the field', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '91, 0');
+      await user.tab();
+      await user.click(originInput());
+      await user.clear(originInput());
+      await user.type(originInput(), '48, 14');
+      await user.tab();
+      expect(statusOf(originInput())).toBe('48.0000°, 14.0000°');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('moves the error style with the input when the fields are swapped', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48, 14');
+      await user.type(destinationInput(), '91, 0');
+      await user.click(
+        screen.getByRole('button', { name: 'Swap origin and destination' }),
+      );
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      expect(destinationInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(destinationInput()).dataset.style).toBe('neutral');
+    });
+
+    it('removes the error style when the field is emptied', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '91, 0');
+      await user.tab();
+      await user.clear(originInput());
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('marks not found as an error when the airport database arrives after leaving the field', async () => {
+      let resolveDatabase: (database: AirportDatabase) => void = () => {};
+      const { user } = renderApp(
+        () =>
+          new Promise<AirportDatabase>((resolve) => {
+            resolveDatabase = resolve;
+          }),
+      );
+      await user.type(originInput(), 'ZZZZ');
+      expect(statusOf(originInput())).toBe('Loading airport database...');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+
+      resolveDatabase(fixtureDatabase);
+      await screen.findByText('Airport code not found');
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('error');
+    });
+
+    it('does not mark a loading airport code that is found after leaving the field', async () => {
+      let resolveDatabase: (database: AirportDatabase) => void = () => {};
+      const { user } = renderApp(
+        () =>
+          new Promise<AirportDatabase>((resolve) => {
+            resolveDatabase = resolve;
+          }),
+      );
+      await user.type(originInput(), 'KJFK');
+      await user.tab();
+      resolveDatabase(fixtureDatabase);
+      await screen.findByText(/John F Kennedy/);
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('shows the offline airport database as a warning, not an error', async () => {
+      const { user } = renderApp(failsToLoad);
+      await user.type(originInput(), 'KJFK');
+      await screen.findByText('Airport database offline');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('warning');
+      expect(statusElement(originInput()).className).toContain(
+        'text-amber-400',
+      );
+      expect(originInput().className).not.toContain('border-red-500');
+    });
+
+    it('does not mark a valid input after leaving the field', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48.2, 14');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('does not mark an error while typing after leaving a valid field', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48.2, 14');
+      await user.tab();
+      await user.click(originInput());
+      await user.type(originInput(), 'x');
+      expect(statusOf(originInput())).toBe('Enter ICAO, IATA, or lat, lon');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('does not mark an error while typing after leaving an empty field', async () => {
+      const { user } = renderApp();
+      await user.click(originInput());
+      await user.tab();
+      await user.click(originInput());
+      await user.type(originInput(), 'K');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+
+    it('removes the error style when an error is edited straight into valid input', async () => {
+      const { user } = renderApp();
+      await user.type(originInput(), '48.2, 14x');
+      await user.tab();
+      expect(originInput().getAttribute('aria-invalid')).toBe('true');
+      await user.click(originInput());
+      await user.keyboard('{Backspace}');
+      expect(statusOf(originInput())).toBe('48.2000°, 14.0000°');
+      expect(originInput().getAttribute('aria-invalid')).not.toBe('true');
+      expect(statusElement(originInput()).dataset.style).toBe('neutral');
+    });
+  });
+
+  it('reads the current date for every route calculation', async () => {
+    const now = vi.fn(() => FIXED_DATE);
+    const user = userEvent.setup();
+    render(<App loadAirportDatabase={loaded} now={now} />);
+    await user.type(originInput(), '48.2, 14');
+    await user.type(destinationInput(), '48.11, 16.5');
+    expect(screen.getByRole('status').textContent).toBe('');
+
+    now.mockReturnValue(new Date('2030-01-01T00:00:00Z'));
+    await user.type(destinationInput(), '7');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Magnetic model expired (WMM2025) – variation may be inaccurate',
+    );
+    expect(magneticHeading()).toMatch(/^\d{3}°$/);
   });
 
   it('shows route values once origin and destination resolve', async () => {
