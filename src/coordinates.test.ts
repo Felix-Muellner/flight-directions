@@ -175,7 +175,9 @@ describe('parseCoordinates: anchors and whitespace', () => {
   });
 
   it('accepts surrounding whitespace in a location input', () => {
-    expect(resolveLocation('  48.2, 14.0  ', null, false).point).toEqual({
+    expect(
+      resolveLocation('  48.2, 14.0  ', { kind: 'loading' }).point,
+    ).toEqual({
       lat: 48.2,
       lon: 14.0,
     });
@@ -188,7 +190,7 @@ describe('resolveLocation with invalid coordinates', () => {
     [`40°60'00"N 73°46'41"W`, 'Minutes and seconds must be below 60'],
     ['90.0001, 0', 'Latitude must be between 90° S and 90° N'],
   ])('names the problem for %s', (raw, status) => {
-    expect(resolveLocation(raw, null, false)).toEqual({
+    expect(resolveLocation(raw, { kind: 'loading' })).toEqual({
       point: null,
       status,
       severity: 'error',
