@@ -91,6 +91,25 @@ describe('App', () => {
     expect(statusOf(originInput())).toBe('Loading airport database...');
   });
 
+  it('shows offline when the bundled snapshot returns 404', async () => {
+    const fetchStub = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('Not Found', { status: 404 }));
+    try {
+      const user = userEvent.setup();
+      render(<App now={() => FIXED_DATE} />);
+      await user.type(originInput(), 'KJFK');
+      await screen.findByText('Airport database offline');
+      expect(statusOf(originInput())).toBe('Airport database offline');
+      expect(fetchStub).toHaveBeenCalledWith(
+        `${import.meta.env.BASE_URL}airports.json`,
+        expect.anything(),
+      );
+    } finally {
+      fetchStub.mockRestore();
+    }
+  });
+
   it('shows offline when the airport database fails to load', async () => {
     const { user } = renderApp(failsToLoad);
     await user.type(originInput(), 'KJFK');

@@ -20,8 +20,10 @@ autopilot `HDG`.
   the problem; no magnetic heading for identical, too-close (< 1 NM) or
   antipodal points, or in the blackout zone near a magnetic pole; a warning in
   the caution zone.
-- **Airport database:** [mwgg/Airports](https://github.com/mwgg/Airports),
-  loaded at runtime from a pinned commit, with a fallback source.
+- **Airport database:** a bundled snapshot of
+  [mwgg/Airports](https://github.com/mwgg/Airports), stored unchanged in
+  [`data/airports.json`](data/airports.json) and shipped with the app; no
+  external download at runtime.
 
 Full behaviour: [`docs/spec.md`](docs/spec.md).
 
@@ -61,11 +63,17 @@ npm run secrets      # secret scan (gitleaks, downloaded to .tools/ and checked 
 ## Status
 
 - **Milestone 1 — Harden:** done.
-- **Milestone 1.5 — Polish:** in progress (clear input errors, validated
-  airport database, display edge cases).
-- **Milestone 2 — Snapshot and deploy:** next (bundled airport database, live
-  demo on GitHub Pages).
+- **Milestone 1.5 — Polish:** done (clear input errors, validated airport
+  database, display edge cases).
+- **Milestone 2 — Snapshot and deploy:** in progress (bundled airport
+  database, live demo on GitHub Pages).
 
 ## License
 
 [MIT](LICENSE.md)
+
+### Airport data
+
+The airport data comes from [mwgg/Airports](https://github.com/mwgg/Airports)
+under the MIT licence: [`data/LICENSE-mwgg-Airports`](data/LICENSE-mwgg-Airports).
+Per mwgg/Airports, its time zones were initially sourced from TimeZoneDB and updated using TimeAPI.

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as airportDatabaseModule from './airportDatabase.ts';
 import {
-  AIRPORT_DATABASE_COMMIT,
   type AirportEntry,
+  BUNDLED_SNAPSHOT_DATE,
   buildAirportDatabase,
   isValidAirportEntry,
   loadAirportDatabase,
@@ -162,57 +163,45 @@ function jsonResponse(body: unknown, ok = true): Response {
 
 describe('loadAirportDatabase', () => {
   const signal = new AbortController().signal;
+  const SNAPSHOT_URL = `${import.meta.env.BASE_URL}airports.json`;
 
-  it('pins the source to a fixed mwgg/Airports commit', () => {
-    expect(AIRPORT_DATABASE_COMMIT).toMatch(/^[0-9a-f]{40}$/);
-    expect(AIRPORT_DATABASE_COMMIT).toBe(
-      'a89e4e0dda9d9878337e2da190ebe1ef1d6af705',
+  it('keeps the commit date of the bundled snapshot, not the commit', () => {
+    expect(BUNDLED_SNAPSHOT_DATE).toBe('2026-10-01');
+    expect(Object.keys(airportDatabaseModule)).not.toContain(
+      'AIRPORT_DATABASE_COMMIT',
     );
   });
 
-  it('fetches the pinned commit from jsDelivr first', async () => {
+  it('loads the bundled snapshot from the same site only', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(raw));
     const loaded = await loadAirportDatabase(signal, fetchFn);
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    expect(fetchFn.mock.calls[0][0]).toBe(
-      `https://cdn.jsdelivr.net/gh/mwgg/Airports@${AIRPORT_DATABASE_COMMIT}/airports.json`,
-    );
+    expect(fetchFn.mock.calls[0][0]).toBe(SNAPSHOT_URL);
+    expect(SNAPSHOT_URL).not.toMatch(/jsdelivr|github/i);
     expect(loaded.get('KJFK')?.icao).toBe('KJFK');
   });
 
-  it('falls back to GitHub raw at the pinned commit', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse(null, false))
-      .mockResolvedValueOnce(jsonResponse(raw));
+  it('still validates entries in the browser', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(raw));
     const loaded = await loadAirportDatabase(signal, fetchFn);
-    expect(fetchFn.mock.calls[1][0]).toBe(
-      `https://raw.githubusercontent.com/mwgg/Airports/${AIRPORT_DATABASE_COMMIT}/airports.json`,
-    );
-    expect(loaded.get('EGLL')?.iata).toBe('LHR');
+    expect(loaded.has('XBAD')).toBe(false);
+    expect(loaded.get('LHR')?.icao).toBe('EGLL');
   });
 
-  it('falls back when the first source throws', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockRejectedValueOnce(new TypeError('network'))
-      .mockResolvedValueOnce(jsonResponse(raw));
-    await expect(loadAirportDatabase(signal, fetchFn)).resolves.toBeDefined();
+  it('rejects on an HTTP error such as 404', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(null, false));
+    await expect(loadAirportDatabase(signal, fetchFn)).rejects.toThrow();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back when the first source returns JSON that is not an object', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse([raw.KJFK]))
-      .mockResolvedValueOnce(jsonResponse(raw));
-    const loaded = await loadAirportDatabase(signal, fetchFn);
-    expect(fetchFn).toHaveBeenCalledTimes(2);
-    expect(loaded.get('KJFK')?.icao).toBe('KJFK');
-  });
-
-  it('rejects when every source fails', async () => {
+  it('rejects when the request fails', async () => {
     const fetchFn = vi.fn().mockRejectedValue(new TypeError('network'));
     await expect(loadAirportDatabase(signal, fetchFn)).rejects.toThrow();
-    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects JSON that is not an object', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse([raw.KJFK]));
+    await expect(loadAirportDatabase(signal, fetchFn)).rejects.toThrow();
   });
 });
