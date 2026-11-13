@@ -13,14 +13,11 @@ export type AirportDatabaseLoader = (
   signal: AbortSignal,
 ) => Promise<AirportDatabase>;
 
-/** mwgg/Airports commit the airport database is pinned to. */
-export const AIRPORT_DATABASE_COMMIT =
-  'a89e4e0dda9d9878337e2da190ebe1ef1d6af705';
+/** Commit date of the mwgg/Airports commit the bundled snapshot comes from. */
+export const BUNDLED_SNAPSHOT_DATE = '2026-10-01';
 
-const AIRPORT_DATABASE_URLS = [
-  `https://cdn.jsdelivr.net/gh/mwgg/Airports@${AIRPORT_DATABASE_COMMIT}/airports.json`,
-  `https://raw.githubusercontent.com/mwgg/Airports/${AIRPORT_DATABASE_COMMIT}/airports.json`,
-] as const;
+/** The bundled snapshot, served from the same site as the app. */
+const BUNDLED_SNAPSHOT_URL = `${import.meta.env.BASE_URL}airports.json`;
 
 const ICAO_PATTERN = /^[A-Za-z0-9]{4}$/;
 const IATA_PATTERN = /^[A-Za-z0-9]{3}$/;
@@ -86,26 +83,21 @@ export function buildAirportDatabase(
 }
 
 /**
- * Fetches the airport database, trying each URL in turn.
- * Rejects if every URL fails or the signal aborts.
+ * Loads the bundled snapshot and builds the airport database from it.
+ * Rejects on network or HTTP errors, on JSON that is not an object, or if
+ * the signal aborts.
  */
 export async function loadAirportDatabase(
   signal: AbortSignal,
   fetchFn: typeof fetch = fetch,
 ): Promise<AirportDatabase> {
-  for (const url of AIRPORT_DATABASE_URLS) {
-    try {
-      const response = await fetchFn(url, { signal });
-      if (!response.ok) continue;
-      const data: unknown = await response.json();
-      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-        continue;
-      }
-      return buildAirportDatabase(data as Record<string, unknown>);
-    } catch (err) {
-      if (signal.aborted) throw err;
-    }
+  const response = await fetchFn(BUNDLED_SNAPSHOT_URL, { signal });
+  if (!response.ok) {
+    throw new Error(`Bundled snapshot unavailable: HTTP ${response.status}`);
   }
-
-  throw new Error('Airport database unavailable from all sources');
+  const data: unknown = await response.json();
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new Error('Bundled snapshot is not a JSON object');
+  }
+  return buildAirportDatabase(data as Record<string, unknown>);
 }

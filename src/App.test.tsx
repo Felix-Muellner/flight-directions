@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App.tsx';
 import {
   type AirportDatabase,
+  BUNDLED_SNAPSHOT_DATE,
   buildAirportDatabase,
 } from './airportDatabase.ts';
 
@@ -89,6 +90,25 @@ describe('App', () => {
     const { user } = renderApp(neverLoads);
     await user.type(originInput(), 'KJFK');
     expect(statusOf(originInput())).toBe('Loading airport database...');
+  });
+
+  it('shows offline when the bundled snapshot returns 404', async () => {
+    const fetchStub = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('Not Found', { status: 404 }));
+    try {
+      const user = userEvent.setup();
+      render(<App now={() => FIXED_DATE} />);
+      await user.type(originInput(), 'KJFK');
+      await screen.findByText('Airport database offline');
+      expect(statusOf(originInput())).toBe('Airport database offline');
+      expect(fetchStub).toHaveBeenCalledWith(
+        `${import.meta.env.BASE_URL}airports.json`,
+        expect.anything(),
+      );
+    } finally {
+      fetchStub.mockRestore();
+    }
   });
 
   it('shows offline when the airport database fails to load', async () => {
@@ -388,5 +408,27 @@ describe('App', () => {
     expect(valueFor('TRUE')).toMatch(/^\d{3}\.\d°$/);
     expect(valueFor('VAR')).toMatch(/^\d+\.\d° [EW]$/);
     expect(valueFor('DIST')).toMatch(/^[\d,]+ NM · [\d,]+ km$/);
+  });
+});
+
+describe('footer', () => {
+  it('shows the airport data source, its licence and the snapshot date', () => {
+    renderApp();
+    const footer = screen.getByRole('contentinfo');
+    // Browsers expose <footer> as the contentinfo landmark only outside
+    // <main> and sectioning elements; jsdom does not apply that rule.
+    expect(footer.tagName).toBe('FOOTER');
+    expect(footer.closest('main, section, article, aside, nav')).toBeNull();
+    expect(footer.textContent).toBe(
+      `Airport data: mwgg/Airports (MIT) · ${BUNDLED_SNAPSHOT_DATE}`,
+    );
+    expect(BUNDLED_SNAPSHOT_DATE).toBe('2026-10-01');
+    expect(
+      within(footer).getByRole('link', { name: 'mwgg/Airports' }),
+    ).toHaveProperty('href', 'https://github.com/mwgg/Airports');
+    // The licence file shipped with the site, next to the bundled snapshot.
+    expect(
+      within(footer).getByRole('link', { name: 'MIT' }).getAttribute('href'),
+    ).toBe(`${import.meta.env.BASE_URL}LICENSE-mwgg-Airports`);
   });
 });
