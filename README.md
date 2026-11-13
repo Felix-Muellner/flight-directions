@@ -60,6 +60,23 @@ npm run build        # production build to dist/
 npm run secrets      # secret scan (gitleaks, downloaded to .tools/ and checked against a pinned SHA-256 on first run)
 ```
 
+## Deploy
+
+The site is published to GitHub Pages by the
+[Deploy workflow](.github/workflows/deploy.yml). It runs only when started by
+hand and only on `main`. It runs lint, typecheck, tests and the secret scan,
+builds the site, and deploys only if all of them pass.
+
+1. One-time setup by the repository owner: **Settings → Pages → Source:
+   GitHub Actions**.
+2. **Actions → Deploy → Run workflow**, branch `main`.
+
+To check a build under the Pages base path locally:
+
+```bash
+BASE_PATH=/flight-directions/ npm run build
+```
+
 ## Status
 
 - **Milestone 1 — Harden:** done.
