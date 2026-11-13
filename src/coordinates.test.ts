@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { checkCoordinates, parseCoordinates } from './coordinates.ts';
+import { type Coordinates, checkCoordinates } from './coordinates.ts';
 import { resolveLocation } from './location.ts';
+
+/** The point of a valid coordinate input, or null. */
+function parseCoordinates(raw: string): Coordinates | null {
+  const result = checkCoordinates(raw);
+  return result.kind === 'valid' ? result.point : null;
+}
 
 function expectPoint(raw: string, lat: number, lon: number) {
   const point = parseCoordinates(raw);
