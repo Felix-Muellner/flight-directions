@@ -1,4 +1,8 @@
-import type { AirportDatabase } from './airportDatabase.ts';
+import {
+  type AirportDatabase,
+  IATA_PATTERN,
+  ICAO_PATTERN,
+} from './airportDatabase.ts';
 import {
   type CoordinateProblem,
   type Coordinates,
@@ -20,8 +24,6 @@ const COORDINATE_PROBLEM_MESSAGES: Record<CoordinateProblem, string> = {
   'latitude-out-of-range': 'Latitude must be between 90° S and 90° N',
   'longitude-out-of-range': 'Longitude must be between 180° W and 180° E',
 };
-
-const AIRPORT_CODE_REGEX = /^[A-Z0-9]{3,4}$/;
 
 /** Resolves a location input to coordinates and a status line. */
 export function resolveLocation(
@@ -50,7 +52,7 @@ export function resolveLocation(
   }
 
   const code = trimmed.toUpperCase();
-  if (AIRPORT_CODE_REGEX.test(code)) {
+  if (ICAO_PATTERN.test(code) || IATA_PATTERN.test(code)) {
     if (!airportDatabase) {
       return hasAirportDatabaseError
         ? {
