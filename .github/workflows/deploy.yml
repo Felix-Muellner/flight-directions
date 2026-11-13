@@ -16,6 +16,9 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read # actions/configure-pages reads the Pages settings
     steps:
       - uses: actions/checkout@v4
         with:
