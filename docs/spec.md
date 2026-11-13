@@ -202,22 +202,28 @@ the database stays usable:
 
 ### Bundled snapshot
 
-The owner decided to store the bundled snapshot in the repo instead of
-downloading it on every build: builds need no network, the shipped data is
-visible in the repo, and airport positions change rarely enough that the
-growth of the Git history stays small.
+The owner decided to store the bundled snapshot in the repo, unchanged,
+instead of downloading it on every build: builds need no network, the
+shipped data is visible in the repo, all fields stay available for later
+features, and airport positions change rarely enough that the growth of the
+Git history stays small.
 
 - The repo stores, in `data/`:
-  - `airports.json`: the bundled snapshot. Only entries that pass the
-    [validation rules](#airport-database-validation), and only the fields
-    `icao`, `iata`, `name`, `lat`, `lon`.
-  - `airports-source.json`: the `mwgg/Airports` commit, its commit date and
-    the SHA-256 of the original `airports.json` at that commit.
-  - `LICENSE-mwgg-Airports`: the `mwgg/Airports` licence, copied verbatim
-    (see [Licence of the airport data](#licence-of-the-airport-data)).
-- The build ships the bundled snapshot as a separate static asset served
+  - `airports.json`: the bundled snapshot, the original `airports.json` of
+    the recorded `mwgg/Airports` commit, byte for byte.
+  - `airports-source.json`: that commit, its commit date and the SHA-256 of
+    `airports.json`.
+  - `LICENSE-mwgg-Airports`: the `mwgg/Airports` licence from the same
+    commit, unchanged (see
+    [Licence of the airport data](#licence-of-the-airport-data)).
+- A test checks, without network, that the SHA-256 of `data/airports.json`
+  matches the recorded one and that at most 1% of its entries fail the
+  [validation rules](#airport-database-validation).
+- The build ships `airports.json` unchanged as a separate static asset served
   from the same site. It downloads nothing and does not ask the GitHub API;
   the footer's commit date comes from `airports-source.json`.
+- The app applies the validation rules in the browser and skips invalid
+  entries, as before.
 - The app no longer fetches the airport database from jsDelivr or GitHub.
 - If the snapshot cannot be loaded, the status is `Airport database offline`
   (including HTTP errors such as 404).
@@ -226,30 +232,21 @@ growth of the Git history stays small.
 
 - The app never checks for or downloads newer airport data in the browser.
   Every visitor sees the **bundled snapshot** of the current deployment.
-- There is no update script. The owner removed it for simplicity: as long as
-  the data is not updated, it is not needed.
-- The first bundled snapshot is made once by hand: download the original
-  `airports.json` of the recorded commit, record its SHA-256, apply the
-  [validation rules](#airport-database-validation) (at most 1% of entries may
-  be invalid), and keep only the five fields. The pull request that adds it
-  lists the exact commands that were run.
-- A later update is a new issue that repeats those steps for a newer commit,
-  followed by a deployment.
+- There is no update script. A later update is a new issue that replaces the
+  three files in `data/` with those of a newer commit, followed by a
+  deployment.
 
 ### Licence of the airport data
 
-`mwgg/Airports` is under the MIT licence, which allows copying, changing and
+`mwgg/Airports` is under the MIT licence, which allows copying and
 redistributing the data on one condition: its copyright notice and
 permission notice are included with every copy.
 
-- `data/LICENSE-mwgg-Airports` holds that licence text unchanged, taken from
-  the same commit as the data.
+- `data/LICENSE-mwgg-Airports` holds that licence text unchanged.
 - The deployed site includes the same file next to the bundled snapshot.
 - The README names `mwgg/Airports` as the source of the airport data and
-  links its licence.
-- The fields dropped from the original (city, state, country, elevation,
-  time zone) are not shipped; the time zones, which the source credits to
-  TimeZoneDB and TimeAPI, are among them.
+  links its licence. It also repeats the source's own credit for the time
+  zones in the file (TimeZoneDB and TimeAPI).
 
 ### Footer
 
@@ -287,3 +284,5 @@ left the mechanics to the agent:
 - The bundled snapshot's commit date is stored in the repo next to its commit
   and SHA-256, not looked up from the GitHub API.
 - The file names in `data/`.
+- The README repeats the source's credit for the time zones (TimeZoneDB and
+  TimeAPI), because the shipped file contains them.
