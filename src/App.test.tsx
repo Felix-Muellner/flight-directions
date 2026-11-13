@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App.tsx';
 import {
   type AirportDatabase,
+  BUNDLED_SNAPSHOT_DATE,
   buildAirportDatabase,
 } from './airportDatabase.ts';
 
@@ -407,5 +408,23 @@ describe('App', () => {
     expect(valueFor('TRUE')).toMatch(/^\d{3}\.\d°$/);
     expect(valueFor('VAR')).toMatch(/^\d+\.\d° [EW]$/);
     expect(valueFor('DIST')).toMatch(/^[\d,]+ NM · [\d,]+ km$/);
+  });
+});
+
+describe('footer', () => {
+  it('shows the airport data source, its licence and the snapshot date', () => {
+    renderApp();
+    const footer = screen.getByRole('contentinfo');
+    expect(footer.textContent).toBe(
+      `Airport data: mwgg/Airports (MIT) · ${BUNDLED_SNAPSHOT_DATE}`,
+    );
+    expect(BUNDLED_SNAPSHOT_DATE).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(
+      within(footer).getByRole('link', { name: 'mwgg/Airports' }),
+    ).toHaveProperty('href', 'https://github.com/mwgg/Airports');
+    // The licence file shipped with the site, next to the bundled snapshot.
+    expect(
+      within(footer).getByRole('link', { name: 'MIT' }).getAttribute('href'),
+    ).toBe(`${import.meta.env.BASE_URL}LICENSE-mwgg-Airports`);
   });
 });
