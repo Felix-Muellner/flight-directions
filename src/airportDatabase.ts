@@ -9,6 +9,12 @@ export interface AirportEntry {
 /** Airport entries keyed by upper-case ICAO and IATA code. */
 export type AirportDatabase = ReadonlyMap<string, AirportEntry>;
 
+/** Where loading the airport database stands. */
+export type AirportDatabaseState =
+  | { kind: 'loading' }
+  | { kind: 'loaded'; database: AirportDatabase }
+  | { kind: 'failed' };
+
 export type AirportDatabaseLoader = (
   signal: AbortSignal,
 ) => Promise<AirportDatabase>;

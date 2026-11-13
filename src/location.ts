@@ -1,5 +1,5 @@
 import {
-  type AirportDatabase,
+  type AirportDatabaseState,
   IATA_PATTERN,
   ICAO_PATTERN,
 } from './airportDatabase.ts';
@@ -28,8 +28,7 @@ const COORDINATE_PROBLEM_MESSAGES: Record<CoordinateProblem, string> = {
 /** Resolves a location input to coordinates and a status line. */
 export function resolveLocation(
   raw: string,
-  airportDatabase: AirportDatabase | null,
-  hasAirportDatabaseError: boolean,
+  airportDatabase: AirportDatabaseState,
 ): ResolvedLocation {
   const trimmed = raw.trim();
   if (!trimmed) return { point: null, status: '', severity: 'none' };
@@ -53,21 +52,22 @@ export function resolveLocation(
 
   const code = trimmed.toUpperCase();
   if (ICAO_PATTERN.test(code) || IATA_PATTERN.test(code)) {
-    if (!airportDatabase) {
-      return hasAirportDatabaseError
-        ? {
-            point: null,
-            status: 'Airport database offline',
-            severity: 'warning',
-          }
-        : {
-            point: null,
-            status: 'Loading airport database...',
-            severity: 'none',
-          };
+    if (airportDatabase.kind === 'failed') {
+      return {
+        point: null,
+        status: 'Airport database offline',
+        severity: 'warning',
+      };
+    }
+    if (airportDatabase.kind === 'loading') {
+      return {
+        point: null,
+        status: 'Loading airport database...',
+        severity: 'none',
+      };
     }
 
-    const airport = airportDatabase.get(code);
+    const airport = airportDatabase.database.get(code);
     if (airport) {
       const codeDisplay = airport.iata
         ? `${airport.icao} / ${airport.iata}`

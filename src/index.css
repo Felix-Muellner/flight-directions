@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 @theme {
+  --color-canvas: #07090e;
+  --color-line: #1e293b;
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 body {
-  background-color: #07090e;
+  background-color: var(--color-canvas);
   color: #f8fafc;
   font-family: var(--font-sans);
   margin: 0;
