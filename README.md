@@ -66,8 +66,8 @@ npm run secrets      # secret scan (gitleaks, downloaded to .tools/ and checked 
 
 The site is published to GitHub Pages by the
 [Deploy workflow](.github/workflows/deploy.yml). It runs only when started by
-hand and only on `main`. It runs lint, typecheck, tests and the secret scan,
-builds the site, and deploys only if all of them pass.
+hand and only on `main`. It runs lint, typecheck, tests, the dependency audit
+and the secret scan, builds the site, and deploys only if all of them pass.
 
 1. One-time setup by the repository owner: **Settings → Pages → Source:
    GitHub Actions**.
@@ -78,6 +78,10 @@ To check a build under the Pages base path locally:
 ```bash
 BASE_PATH=/flight-directions/ npm run build
 ```
+
+The workflows pin every GitHub Action to a commit SHA, with the version in a
+comment. Dependabot opens a pull request when an Action has a new release;
+check its release notes, then merge it like any other change.
 
 ## Status
 

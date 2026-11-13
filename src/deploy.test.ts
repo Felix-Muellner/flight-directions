@@ -146,3 +146,27 @@ describe('deploy workflow', () => {
     expect(deploy).toContain('actions/deploy-pages');
   });
 });
+
+describe('GitHub Actions supply chain', () => {
+  const workflowsDir = join(ROOT, '.github', 'workflows');
+  const workflows = readdirSync(workflowsDir).filter((name) =>
+    /\.ya?ml$/.test(name),
+  );
+
+  it.each(workflows)('%s pins every Action to a full commit SHA', (name) => {
+    const text = readFileSync(join(workflowsDir, name), 'utf8');
+    const uses = [...text.matchAll(/^\s*-?\s*uses:\s*(\S+)(.*)$/gm)];
+    expect(uses.length).toBeGreaterThan(0);
+    for (const [, ref, rest] of uses) {
+      expect(ref, ref).toMatch(/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/);
+      // The version stays readable next to the SHA.
+      expect(rest, ref).toMatch(/#\s*v\d/);
+    }
+  });
+
+  it('lets Dependabot propose updates for the pinned Actions', () => {
+    const config = join(ROOT, '.github', 'dependabot.yml');
+    const text = existsSync(config) ? readFileSync(config, 'utf8') : '';
+    expect(text).toMatch(/package-ecosystem:\s*["']?github-actions["']?/);
+  });
+});

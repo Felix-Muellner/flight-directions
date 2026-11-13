@@ -1,0 +1,9 @@
+# Proposes updates for the GitHub Actions, which the workflows pin to commit
+# SHAs (see docs/spec.md, Milestone 2.5 › CI). npm dependencies are updated
+# through issues instead.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
