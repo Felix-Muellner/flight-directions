@@ -41,7 +41,10 @@ describe('build under the GitHub Pages base path', () => {
       .filter((name) => name.endsWith('.js'))
       .map((name) => readFileSync(join(assets, name), 'utf8'))
       .join('\n');
-    expect(scripts).toContain(PAGES_BASE);
+    // The exact URLs: the test build embeds absolute source paths, which may
+    // contain /flight-directions/ on their own.
+    expect(scripts).toContain(`${PAGES_BASE}airports.json`);
+    expect(scripts).toContain(`${PAGES_BASE}LICENSE-mwgg-Airports`);
     expect(existsSync(join(outDir, 'airports.json'))).toBe(true);
     expect(existsSync(join(outDir, 'LICENSE-mwgg-Airports'))).toBe(true);
   });
