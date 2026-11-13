@@ -55,7 +55,7 @@ npm test             # run tests (Vitest)
 npm run lint         # lint + format check (Biome); fix with: npm run format
 npm run typecheck    # TypeScript check
 npm run build        # production build to dist/
-npm run secrets      # secret scan (gitleaks, downloaded to .tools/ on first run)
+npm run secrets      # secret scan (gitleaks, downloaded to .tools/ and checked against a pinned SHA-256 on first run)
 ```
 
 ## Status
