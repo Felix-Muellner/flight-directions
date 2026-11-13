@@ -210,31 +210,21 @@ Git history stays small.
 
 - The repo stores, in `data/`:
   - `airports.json`: the bundled snapshot, the original `airports.json` of
-    the recorded `mwgg/Airports` commit, byte for byte.
-  - `airports-source.json`: that commit, its commit date and the SHA-256 of
-    `airports.json`.
+    `mwgg/Airports` commit `a89e4e0dda9d9878337e2da190ebe1ef1d6af705`, byte
+    for byte.
   - `LICENSE-mwgg-Airports`: the `mwgg/Airports` licence from the same
     commit, unchanged (see
     [Licence of the airport data](#licence-of-the-airport-data)).
-- A test checks, without network, that the SHA-256 of `data/airports.json`
-  matches the recorded one and that at most 1% of its entries fail the
-  [validation rules](#airport-database-validation).
+- The code keeps the commit date of that commit as a constant for the
+  footer. It does not keep the commit itself, which only this spec records.
 - The build ships `airports.json` unchanged as a separate static asset served
-  from the same site. It downloads nothing and does not ask the GitHub API;
-  the footer's commit date comes from `airports-source.json`.
+  from the same site. It downloads nothing.
 - The app applies the validation rules in the browser and skips invalid
   entries, as before.
 - The app no longer fetches the airport database from jsDelivr or GitHub.
 - If the snapshot cannot be loaded, the status is `Airport database offline`
   (including HTTP errors such as 404).
-
-### Updating the airport database
-
-- The app never checks for or downloads newer airport data in the browser.
-  Every visitor sees the **bundled snapshot** of the current deployment.
-- There is no update script. A later update is a new issue that replaces the
-  three files in `data/` with those of a newer commit, followed by a
-  deployment.
+- A later data update is its own issue.
 
 ### Licence of the airport data
 
@@ -255,7 +245,6 @@ permission notice are included with every copy.
 - `Airport data: mwgg/Airports (MIT) · YYYY-MM-DD`: the source links to the
   repository, the licence to the licence file shipped with the site, the
   date is the commit date of the bundled snapshot.
-- No update button and no update status.
 
 ### Deployment
 
@@ -270,11 +259,6 @@ permission notice are included with every copy.
 ### Out of scope for milestone 2
 
 - Deployment to a homelab (its own later milestone).
-- Any in-browser update of the airport database. The owner removed it: an
-  update in one browser would not reach other visitors, and airport
-  positions rarely change.
-- Automating snapshot updates (e.g. a scheduled workflow that opens a pull
-  request); possible as a later issue.
 
 ## Decisions made without asking
 
@@ -283,8 +267,8 @@ left the mechanics to the agent:
 
 - `mwgg/Airports` stays the source; it is MIT-licensed and maintained.
 - Footer and status wording and the "first problem in table order" rule.
-- The bundled snapshot's commit date is stored in the repo next to its commit
-  and SHA-256, not looked up from the GitHub API.
+- The bundled snapshot's commit date is a constant in the code, not looked
+  up from the GitHub API.
 - The file names in `data/`.
 - The README repeats the source's credit for the time zones (TimeZoneDB and
   TimeAPI), because the shipped file contains them.
