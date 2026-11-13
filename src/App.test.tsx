@@ -415,10 +415,14 @@ describe('footer', () => {
   it('shows the airport data source, its licence and the snapshot date', () => {
     renderApp();
     const footer = screen.getByRole('contentinfo');
+    // Browsers expose <footer> as the contentinfo landmark only outside
+    // <main> and sectioning elements; jsdom does not apply that rule.
+    expect(footer.tagName).toBe('FOOTER');
+    expect(footer.closest('main, section, article, aside, nav')).toBeNull();
     expect(footer.textContent).toBe(
       `Airport data: mwgg/Airports (MIT) · ${BUNDLED_SNAPSHOT_DATE}`,
     );
-    expect(BUNDLED_SNAPSHOT_DATE).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(BUNDLED_SNAPSHOT_DATE).toBe('2026-10-01');
     expect(
       within(footer).getByRole('link', { name: 'mwgg/Airports' }),
     ).toHaveProperty('href', 'https://github.com/mwgg/Airports');
