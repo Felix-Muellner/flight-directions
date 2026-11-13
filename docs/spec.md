@@ -246,7 +246,9 @@ permission notice are included with every copy.
 - The deployed site includes the same file next to the bundled snapshot.
 - The README names `mwgg/Airports` as the source of the airport data and
   links its licence. It also repeats the source's own credit for the time
-  zones in the file (TimeZoneDB and TimeAPI).
+  zones in the file, worded so it is clearly the source's credit, not ours:
+  `Per mwgg/Airports, its time zones were initially sourced from TimeZoneDB
+  and updated using TimeAPI.`
 
 ### Footer
 
