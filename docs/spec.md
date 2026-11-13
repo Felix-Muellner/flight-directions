@@ -278,7 +278,9 @@ source, nothing the user sees changes.
 ### CI
 
 - Every GitHub Action in the CI and deploy workflows is pinned to a full
-  commit SHA, with its version in a comment.
+  commit SHA of its latest release, with its version in a comment. Pinned
+  releases run on the Node 24 Actions runtime (Node 20 was removed from
+  GitHub's runners on 2026-09-23).
 - Dependabot proposes updates for those Actions.
 - The deploy workflow runs `npm audit --audit-level=high` before building,
   as CI does.
@@ -296,8 +298,11 @@ Refactors with no change in behaviour:
 
 ### Dependencies
 
-- Patch-level updates of the dev dependencies and Vite plugins. Major
-  version updates (vitest, jsdom, lucide-react) are out of scope.
+- Every dependency is on its latest release, including the major updates
+  of vitest (5), jsdom (31) and lucide-react (1.x).
+- CI, the deploy workflow and the dev container run Node.js 26, the active
+  LTS line. `engines` also accepts Node 22.22.2+ and 24.15+, the oldest
+  versions jsdom 31 supports.
 
 ## Decisions made without asking
 

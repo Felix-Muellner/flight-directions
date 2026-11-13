@@ -3,12 +3,13 @@
 {
   "name": "Flight Directions",
 
-  // Node 22 to match CI (.github/workflows/ci.yml) and package.json "engines"
-  // (>=22.12). Debian-based image with git, npm and TypeScript tooling.
+  // Node 26 (active LTS) to match CI (.github/workflows/ci.yml) and
+  // package.json "engines". Debian-based image with git, npm and TypeScript
+  // tooling.
   // The image also ships pnpm and yarn; this project refuses them. npm is the
   // only supported package manager ("packageManager" in package.json, plus
   // engine-strict in .npmrc).
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:5-26-trixie",
 
   "features": {
     // Official Anthropic feature: installs the Claude Code CLI (`claude`) and

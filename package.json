@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@11.20.0",
   "engines": {
-    "node": ">=22.12",
+    "node": "^22.22.2 || ^24.15.0 || >=26",
     "npm": ">=10.9",
     "pnpm": "use npm",
     "yarn": "use npm"
@@ -27,7 +27,7 @@
     "@turf/bearing": "^7.4.0",
     "@turf/distance": "^7.4.0",
     "geomagnetism": "^0.2.0",
-    "lucide-react": "^0.546.0",
+    "lucide-react": "^1.72.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1"
   },
@@ -37,14 +37,14 @@
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.10",
-    "@types/node": "^22.14.0",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^4.1.12"
+    "vitest": "^5.1.0"
   }
 }

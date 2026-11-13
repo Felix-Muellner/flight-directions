@@ -49,7 +49,7 @@ React 19 · TypeScript · Vite · Tailwind CSS · Vitest · Biome · GitHub Acti
 
 ## Development
 
-Requires Node.js 22.12+ and npm 10.9+. A dev container is included (GitHub
+Requires Node.js 26 (22.22.2+ and 24.15+ also work) and npm 10.9+. A dev container is included (GitHub
 Codespaces or VS Code Dev Containers).
 
 ```bash
