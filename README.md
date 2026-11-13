@@ -7,6 +7,8 @@ Magnetic heading and distance calculator for Microsoft Flight Simulator 2024.
 Enter an origin and a destination and get the magnetic heading to set in the
 autopilot `HDG`.
 
+**Live demo:** <https://felix-muellner.github.io/flight-directions/>
+
 ## Features
 
 - **Location input:** ICAO code (`KJFK`), IATA code (`JFK`) or coordinates —
@@ -88,9 +90,9 @@ check its release notes, then merge it like any other change.
 - **Milestone 1 — Harden:** done.
 - **Milestone 1.5 — Polish:** done (clear input errors, validated airport
   database, display edge cases).
-- **Milestone 2 — Snapshot and deploy:** in progress (bundled airport
-  database, live demo on GitHub Pages).
-- **Milestone 2.5 — Audit follow-up:** in progress (see
+- **Milestone 2 — Snapshot and deploy:** done (bundled airport database,
+  live demo on GitHub Pages).
+- **Milestone 2.5 — Audit follow-up:** done (see
   [`docs/audit-2026-11.md`](docs/audit-2026-11.md)).
 
 ## License
