@@ -7,8 +7,6 @@ Magnetic heading and distance calculator for Microsoft Flight Simulator 2024.
 Enter an origin and a destination and get the magnetic heading to set in the
 autopilot `HDG`.
 
-**Live demo:** <https://felix-muellner.github.io/flight-directions/>
-
 ## Features
 
 - **Location input:** ICAO code (`KJFK`), IATA code (`JFK`) or coordinates —
@@ -66,8 +64,13 @@ npm run secrets      # secret scan (gitleaks, downloaded to .tools/ and checked 
 
 ## Deploy
 
-The site is published to GitHub Pages by the
-[Deploy workflow](.github/workflows/deploy.yml). It runs only when started by
+The site is not published at the moment. The deployment itself is set up
+and working; only the legal pages (disclosure, privacy note, third-party
+licence texts) are missing. To use the app, run it locally (see
+[Development](#development)).
+
+The [Deploy workflow](.github/workflows/deploy.yml) publishes the site to
+GitHub Pages. It runs only when started by
 hand and only on `main`. It runs lint, typecheck, tests, the dependency audit
 and the secret scan, builds the site, and deploys only if all of them pass.
 
@@ -91,7 +94,7 @@ check its release notes, then merge it like any other change.
 - **Milestone 1.5 — Polish:** done (clear input errors, validated airport
   database, display edge cases).
 - **Milestone 2 — Snapshot and deploy:** done (bundled airport database,
-  live demo on GitHub Pages).
+  deploy workflow for GitHub Pages; site not published at the moment).
 - **Milestone 2.5 — Audit follow-up:** done (see
   [`docs/audit-2026-11.md`](docs/audit-2026-11.md)).
 
